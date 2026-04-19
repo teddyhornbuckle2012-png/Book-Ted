@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BOOK TED — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #E8D08A;
+    --gold-dim: #7a6530;
+    --black: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --text: #f0e8d8;
+    --text-muted: #8a7a60;
+    --green: #4caf7d;
+    --red: #c94c4c;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--black); color: var(--text); font-family: 'Cormorant Garamond', Georgia, serif; font-size: 18px; font-weight: 300; min-height: 100vh; }
+  .top-rule { width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  /* ── Login ── */
+  #loginScreen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .login-card { background: var(--surface); border: 1px solid #2a2318; padding: 48px 40px; max-width: 400px; width: 100%; position: relative; text-align: center; animation: fadeUp 0.6s ease both; }
+  .login-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .corner { position: absolute; width: 16px; height: 16px; border-color: var(--gold); border-style: solid; }
+  .corner-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .corner-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+  .corner-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+  .corner-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+  .login-logo { font-family: 'Cinzel', serif; font-size: 36px; font-weight: 900; letter-spacing: 0.18em; background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light), var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 6px; }
+  .login-sub { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.3em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 36px; }
+  .login-field { display: flex; flex-direction: column; margin-bottom: 24px; text-align: left; }
+  .login-field label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.3em; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 8px; }
+  .login-field input { background: var(--surface2); border: 1px solid #2a2318; border-bottom: 1px solid var(--gold-dim); color: var(--text); font-family: 'Cormorant Garamond', serif; font-size: 16px; padding: 10px 14px; outline: none; border-radius: 0; }
+  .login-field input:focus { border-color: var(--gold); }
+  .btn-login { width: 100%; background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold-dim); color: var(--gold); font-family: 'Cinzel', serif; font-size: 11px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; padding: 16px; cursor: pointer; transition: all 0.25s; }
+  .btn-login:hover { border-color: var(--gold); color: var(--gold-light); }
+  .login-error { color: var(--red); font-size: 13px; font-style: italic; margin-top: 12px; display: none; }
+
+  /* ── Dashboard ── */
+  #dashboard { display: none; }
+  .dash-header { padding: 32px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2318; }
+  .dash-logo { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 900; letter-spacing: 0.18em; background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .dash-sub { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 0.3em; color: var(--gold-dim); text-transform: uppercase; margin-top: 2px; }
+  .btn-logout { background: none; border: 1px solid #2a2318; color: var(--text-muted); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 8px 16px; cursor: pointer; transition: all 0.2s; }
+  .btn-logout:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  .dash-content { padding: 40px; max-width: 900px; margin: 0 auto; }
+  .dash-title { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.3em; color: var(--gold); text-transform: uppercase; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; }
+  .dash-title::after { content: ''; flex: 1; height: 1px; background: #2a2318; }
+
+  /* ── Filter tabs ── */
+  .filter-tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .tab { background: none; border: 1px solid #2a2318; color: var(--text-muted); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 8px 18px; cursor: pointer; transition: all 0.2s; }
+  .tab.active, .tab:hover { border-color: var(--gold-dim); color: var(--gold); }
+
+  /* ── Booking cards ── */
+  .bookings-list { display: flex; flex-direction: column; gap: 16px; }
+  .booking-card { background: var(--surface); border: 1px solid #2a2318; border-left: 2px solid var(--gold-dim); padding: 24px 28px; display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; animation: fadeUp 0.4s ease both; }
+  .booking-card.confirmed { border-left-color: var(--green); }
+  .booking-card.declined { border-left-color: var(--red); opacity: 0.6; }
+  .booking-name { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 10px; }
+  .booking-details { display: flex; flex-wrap: wrap; gap: 16px; }
+  .booking-detail { font-size: 14px; color: var(--text-muted); }
+  .booking-detail span { color: var(--text); }
+  .booking-status { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 4px 12px; border: 1px solid; margin-bottom: 12px; display: inline-block; }
+  .status-pending { color: var(--gold); border-color: var(--gold-dim); }
+  .status-confirmed { color: var(--green); border-color: var(--green); }
+  .status-declined { color: var(--red); border-color: var(--red); }
+  .booking-actions { display: flex; flex-direction: column; gap: 10px; min-width: 130px; }
+  .btn-confirm { background: linear-gradient(135deg, #0a1a0f, #0f2a18); border: 1px solid var(--green); color: var(--green); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
+  .btn-confirm:hover { background: #0f2a18; box-shadow: 0 0 12px rgba(76,175,125,0.15); }
+  .btn-decline { background: linear-gradient(135deg, #1a0a0a, #2a0f0f); border: 1px solid var(--red); color: var(--red); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
+  .btn-decline:hover { background: #2a0f0f; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-style: italic; }
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); font-style: italic; }
+
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 600px) { .dash-header { padding: 20px; } .dash-content { padding: 20px; } .booking-card { grid-template-columns: 1fr; } .booking-actions { flex-direction: row; } }
+</style>
+</head>
+<body>
+<div class="top-rule"></div>
+
+<!-- Login Screen -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+    <div class="login-logo">BOOK TED</div>
+    <div class="login-sub">Admin Access</div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="passwordInput" placeholder="Enter your password" onkeydown="if(event.key==='Enter') login()" />
+    </div>
+    <button class="btn-login" onclick="login()">Enter Dashboard</button>
+    <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard">
+  <div class="dash-header">
+    <div>
+      <div class="dash-logo">BOOK TED</div>
+      <div class="dash-sub">Admin Dashboard</div>
+    </div>
+    <button class="btn-logout" onclick="logout()">Log Out</button>
+  </div>
+
+  <div class="dash-content">
+    <div class="dash-title">Booking Requests</div>
+
+    <div class="filter-tabs">
+      <button class="tab active" onclick="filterBookings('all', this)">All</button>
+      <button class="tab" onclick="filterBookings('pending', this)">Pending</button>
+      <button class="tab" onclick="filterBookings('confirmed', this)">Confirmed</button>
+      <button class="tab" onclick="filterBookings('declined', this)">Declined</button>
+    </div>
+
+    <div class="bookings-list" id="bookingsList">
+      <div class="loading">Loading bookings...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ADMIN_PASSWORD = 'bookted2024';
+  let allBookings = [];
+  let currentFilter = 'all';
+
+  function login() {
+    const pw = document.getElementById('passwordInput').value;
+    if (pw === ADMIN_PASSWORD) {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      loadBookings();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+
+  function logout() {
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('passwordInput').value = '';
+  }
+
+  async function loadBookings() {
+    try {
+      const res = await fetch('/.netlify/functions/get-bookings');
+      const data = await res.json();
+      allBookings = data;
+      renderBookings();
+    } catch (e) {
+      document.getElementById('bookingsList').innerHTML = '<div class="empty-state">Could not load bookings.</div>';
+    }
+  }
+
+  function filterBookings(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderBookings();
+  }
+
+  function renderBookings() {
+    const list = document.getElementById('bookingsList');
+    const filtered = currentFilter === 'all' ? allBookings : allBookings.filter(b => b.status === currentFilter);
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty-state">No bookings found.</div>';
+      return;
+    }
+
+    list.innerHTML = filtered.map(b => `
+      <div class="booking-card ${b.status}" id="card-${b.id}">
+        <div>
+          <div class="booking-name">${b.first_name} ${b.last_name}</div>
+          <div class="booking-status status-${b.status}">${b.status.toUpperCase()}</div>
+          <div class="booking-details">
+            <div class="booking-detail">📧 <span>${b.email}</span></div>
+            <div class="booking-detail">📱 <span>${b.phone}</span></div>
+            <div class="booking-detail">📍 <span>${b.location}</span></div>
+            <div class="booking-detail">🕐 <span>${b.slot_time}</span></div>
+            <div class="booking-detail">💳 <span>${b.paid ? 'Paid' : 'Unpaid'}</span></div>
+          </div>
+        </div>
+        <div class="booking-actions">
+          ${b.status === 'pending' ? `
+            <button class="btn-confirm" onclick="updateBooking('${b.id}', 'confirmed', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}')">✓ CONFIRM</button>
+            <button class="btn-decline" onclick="updateBooking('${b.id}', 'declined', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}')">✗ DECLINE</button>
+          ` : `<div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);">${b.status.toUpperCase()}</div>`}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function updateBooking(id, status, email, firstName, location, slotTime) {
+    const res = await fetch('/.netlify/functions/update-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status, email, firstName, location, slotTime })
+    });
+
+    if (res.ok) {
+      allBookings = allBookings.map(b => b.id === id ? { ...b, status } : b);
+      renderBookings();
+    } else {
+      alert('Something went wrong. Please try again.');
+    }
+  }
+</script>
+</body>
+</html>
