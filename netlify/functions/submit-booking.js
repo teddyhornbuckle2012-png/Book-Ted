@@ -8,9 +8,6 @@ export default async (req) => {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
-  const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
-  const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
-  const TWILIO_FROM = process.env.TWILIO_PHONE_NUMBER;
 
   // 1. Save booking to Supabase
   const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
@@ -37,9 +34,7 @@ export default async (req) => {
     return new Response('Database error', { status: 500 });
   }
 
-  const message = `Hi ${firstName}! Your Book Ted request has been received.\n\nDetails:\nName: ${firstName} ${lastName}\nLocation: ${location}\nTime: ${slotTime}\n\nTed will review your request and confirm shortly. You will receive payment details only once confirmed.\n\nThe £5 deposit is fully refunded when Ted arrives. The £2.50 booking fee is non-refundable.`;
-
-  // 2. Send email via Resend
+  // 2. Send confirmation email via Resend
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -47,7 +42,7 @@ export default async (req) => {
       'Authorization': `Bearer ${RESEND_KEY}`
     },
     body: JSON.stringify({
-      from: 'Book Ted <bookings@yourdomain.com>',
+      from: 'Book Ted <bookings@booktedd.netlify.app>',
       to: email,
       subject: 'BOOK TED — Booking Request Received',
       html: `
@@ -60,26 +55,16 @@ export default async (req) => {
             <p style="margin:0;line-height:2;color:#8a7a60;">
               <strong style="color:#C9A84C;">Name:</strong> ${firstName} ${lastName}<br/>
               <strong style="color:#C9A84C;">Location:</strong> ${location}<br/>
-              <strong style="color:#C9A84C;">Time:</strong> ${slotTime}
+              <strong style="color:#C9A84C;">Requested Time:</strong> ${slotTime}
             </p>
           </div>
-          <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;">Payment will only be requested once Ted confirms your appointment.<br/>The £5 deposit is fully refunded when Ted arrives. The £2.50 booking fee is non-refundable.</p>
+          <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;">
+            Payment will only be requested once Ted confirms your appointment.<br/>
+            The £5 deposit is fully refunded when Ted arrives.<br/>
+            The £2.50 booking fee is non-refundable.
+          </p>
         </div>
       `
-    })
-  });
-
-  // 3. Send SMS via Twilio
-  const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Basic ' + btoa(`${TWILIO_SID}:${TWILIO_TOKEN}`)
-    },
-    body: new URLSearchParams({
-      From: TWILIO_FROM,
-      To: phone,
-      Body: message
     })
   });
 
