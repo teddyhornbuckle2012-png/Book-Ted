@@ -8,7 +8,6 @@ export default async (req) => {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
-  const TED_EMAIL = process.env.TED_EMAIL;
 
   // 1. Update booking status in Supabase
   const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
@@ -37,7 +36,7 @@ export default async (req) => {
       <h1 style="font-family:serif;color:#C9A84C;letter-spacing:0.2em;font-size:28px;margin-bottom:8px;">BOOK TED</h1>
       <p style="color:#7a6530;font-style:italic;margin-bottom:32px;">A private appointment service</p>
       <h2 style="color:#C9A84C;font-size:16px;letter-spacing:0.15em;">APPOINTMENT CONFIRMED</h2>
-      <p style="margin:20px 0;line-height:1.8;">Hi ${firstName},<br/><br/>Your appointment has been confirmed by Ted! Please complete your payment below to fully secure your slot.</p>
+      <p style="margin:20px 0;line-height:1.8;">Hi ${firstName},<br/><br/>Your appointment has been confirmed by Ted! Please complete your payment to fully secure your slot.</p>
       <div style="border-left:2px solid #C9A84C;padding:16px 20px;background:#111;margin:24px 0;">
         <p style="margin:0;line-height:2;color:#8a7a60;">
           <strong style="color:#C9A84C;">Location:</strong> ${location}<br/>
@@ -45,11 +44,11 @@ export default async (req) => {
           <strong style="color:#C9A84C;">Amount Due:</strong> £7.50 (£2.50 booking fee + £5.00 deposit)
         </p>
       </div>
-      <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;margin-bottom:24px;">
+      <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;">
         The £5.00 deposit is fully refunded when Ted arrives.<br/>
-        The £2.50 booking fee is non-refundable.
+        The £2.50 booking fee is non-refundable.<br/><br/>
+        Ted will send your payment link shortly.
       </p>
-      <p style="color:#C9A84C;font-size:14px;">Payment link coming soon — Ted will send this to you shortly.</p>
     </div>
   ` : `
     <div style="background:#0a0a0a;color:#f0e8d8;font-family:Georgia,serif;padding:40px;max-width:560px;margin:0 auto;">
