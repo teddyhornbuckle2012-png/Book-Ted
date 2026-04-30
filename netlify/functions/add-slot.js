@@ -1,16 +1,20 @@
 export default async (req) => {
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { 'Content-Type': 'application/json' } });
   }
 
   const { slot_date, slot_time } = await req.json();
 
   if (!slot_date || !slot_time) {
-    return new Response('Missing slot_date or slot_time', { status: 400 });
+    return new Response(JSON.stringify({ error: 'Missing slot_date or slot_time' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
   }
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    return new Response(JSON.stringify({ error: 'SUPABASE_URL or SUPABASE_SECRET_KEY env var is missing in Netlify' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
 
   const res = await fetch(`${SUPABASE_URL}/rest/v1/availability`, {
     method: 'POST',
@@ -25,11 +29,18 @@ export default async (req) => {
 
   if (!res.ok) {
     const body = await res.text();
-    return new Response(body || 'Database error', { status: res.status });
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch {}
+    return new Response(JSON.stringify({
+      error: parsed?.message || body || 'Database error',
+      hint: parsed?.hint,
+      code: parsed?.code,
+      status: res.status
+    }), { status: res.status, headers: { 'Content-Type': 'application/json' } });
   }
 
   const data = await res.json();
-  return new Response(JSON.stringify(data[0] || data), {
+  return new Response(JSON.stringify(Array.isArray(data) ? (data[0] || {}) : data), {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   });

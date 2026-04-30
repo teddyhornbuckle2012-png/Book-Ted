@@ -224,14 +224,28 @@
     document.getElementById('passwordInput').value = '';
   }
 
+  async function readError(res) {
+    try {
+      const data = await res.clone().json();
+      return data.error || data.message || JSON.stringify(data);
+    } catch {
+      try { return await res.text(); } catch { return `HTTP ${res.status}`; }
+    }
+  }
+
   async function loadBookings() {
     try {
       const res = await fetch('/.netlify/functions/get-bookings');
+      if (!res.ok) {
+        const msg = await readError(res);
+        document.getElementById('bookingsList').innerHTML = `<div class="empty-state">Could not load bookings.<br/><br/><span style="font-size:12px;">${msg}</span></div>`;
+        return;
+      }
       const data = await res.json();
-      allBookings = data;
+      allBookings = Array.isArray(data) ? data : [];
       renderBookings();
     } catch (e) {
-      document.getElementById('bookingsList').innerHTML = '<div class="empty-state">Could not load bookings.</div>';
+      document.getElementById('bookingsList').innerHTML = `<div class="empty-state">Could not load bookings.<br/><br/><span style="font-size:12px;">${e.message}</span></div>`;
     }
   }
 
@@ -240,6 +254,10 @@
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
     renderBookings();
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   function renderBookings() {
@@ -251,26 +269,41 @@
       return;
     }
 
-    list.innerHTML = filtered.map(b => `
-      <div class="booking-card ${b.status}" id="card-${b.id}">
-        <div>
-          <div class="booking-name">${b.first_name} ${b.last_name}</div>
-          <div class="booking-status status-${b.status}">${b.status.toUpperCase()}</div>
-          <div class="booking-details">
-            <div class="booking-detail">📧 <span>${b.email}</span></div>
-            <div class="booking-detail">📍 <span>${b.location}</span></div>
-            <div class="booking-detail">🕐 <span>${b.slot_time}</span></div>
-            <div class="booking-detail">💳 <span>${b.paid ? 'Paid' : 'Unpaid'}</span></div>
+    list.innerHTML = filtered.map(b => {
+      const statusUpper = (b.status || '').toUpperCase();
+      return `
+        <div class="booking-card ${escapeHtml(b.status)}" data-booking-id="${escapeHtml(b.id)}">
+          <div>
+            <div class="booking-name">${escapeHtml(b.first_name)} ${escapeHtml(b.last_name)}</div>
+            <div class="booking-status status-${escapeHtml(b.status)}">${escapeHtml(statusUpper)}</div>
+            <div class="booking-details">
+              <div class="booking-detail">📧 <span>${escapeHtml(b.email)}</span></div>
+              <div class="booking-detail">📍 <span>${escapeHtml(b.location)}</span></div>
+              <div class="booking-detail">🕐 <span>${escapeHtml(b.slot_time)}</span></div>
+              <div class="booking-detail">💳 <span>${b.paid ? 'Paid' : 'Unpaid'}</span></div>
+            </div>
+          </div>
+          <div class="booking-actions">
+            ${b.status === 'pending' ? `
+              <button class="btn-confirm" data-action="confirm">✓ CONFIRM</button>
+              <button class="btn-decline" data-action="decline">✗ DECLINE</button>
+            ` : `<div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);">${escapeHtml(statusUpper)}</div>`}
           </div>
         </div>
-        <div class="booking-actions">
-          ${b.status === 'pending' ? `
-            <button class="btn-confirm" onclick="updateBooking('${b.id}', 'confirmed', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}', '${b.slot_id || ''}')">✓ CONFIRM</button>
-            <button class="btn-decline" onclick="updateBooking('${b.id}', 'declined', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}', '${b.slot_id || ''}')">✗ DECLINE</button>
-          ` : `<div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);">${b.status.toUpperCase()}</div>`}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
+
+    list.querySelectorAll('.booking-card').forEach(card => {
+      const id = card.dataset.bookingId;
+      card.querySelectorAll('button[data-action]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const b = allBookings.find(x => x.id === id);
+          if (!b) return;
+          const newStatus = btn.dataset.action === 'confirm' ? 'confirmed' : 'declined';
+          updateBooking(b.id, newStatus, b.email, b.first_name, b.location, b.slot_time, b.slot_id || '');
+        });
+      });
+    });
   }
 
   async function updateBooking(id, status, email, firstName, location, slotTime, slotId) {
@@ -285,7 +318,7 @@
       renderBookings();
       if (status === 'declined') loadSlots();
     } else {
-      alert('Something went wrong. Please try again.');
+      alert('Something went wrong:\n\n' + await readError(res));
     }
   }
 
@@ -293,8 +326,14 @@
   async function loadSlots() {
     try {
       const res = await fetch('/.netlify/functions/get-slots');
-      allSlots = await res.json();
-      if (!Array.isArray(allSlots)) allSlots = [];
+      if (!res.ok) {
+        const msg = await readError(res);
+        alert('Could not load availability:\n\n' + msg);
+        allSlots = [];
+      } else {
+        const data = await res.json();
+        allSlots = Array.isArray(data) ? data : [];
+      }
     } catch (e) {
       allSlots = [];
     }
@@ -400,8 +439,12 @@
       timeInput.value = '';
       await loadSlots();
     } else {
-      const msg = await res.text();
-      alert(msg.includes('duplicate') ? 'That time is already added for this date.' : 'Could not add slot.');
+      const msg = await readError(res);
+      if (msg.toLowerCase().includes('duplicate')) {
+        alert('That time is already added for this date.');
+      } else {
+        alert('Could not add slot:\n\n' + msg);
+      }
     }
   }
 
@@ -415,7 +458,7 @@
     if (res.ok) {
       await loadSlots();
     } else {
-      alert('Could not remove slot.');
+      alert('Could not remove slot:\n\n' + await readError(res));
     }
   }
 </script>

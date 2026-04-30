@@ -157,18 +157,36 @@
     return `${DOW[d.getDay()]} ${d.getDate()} ${MONTH[d.getMonth()]} · ${timeStr}`;
   }
 
+  async function readError(res) {
+    try {
+      const data = await res.clone().json();
+      return data.error || data.message || JSON.stringify(data);
+    } catch {
+      try { return await res.text(); } catch { return `HTTP ${res.status}`; }
+    }
+  }
+
+  function escapeAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
   async function loadSlots() {
     const grid = document.getElementById('slotsGrid');
     try {
       const res = await fetch('/.netlify/functions/get-slots');
+      if (!res.ok) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);font-style:italic;">Could not load availability. Please refresh.</div>';
+        return;
+      }
       const slots = await res.json();
       if (!Array.isArray(slots) || slots.length === 0) {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);font-style:italic;">No availability at the moment — please check back soon.</div>';
         return;
       }
-      grid.innerHTML = slots.map(s =>
-        `<div class="slot" data-id="${s.id}" data-label="${formatSlotLabel(s.slot_date, s.slot_time)}">${formatSlotLabel(s.slot_date, s.slot_time)}</div>`
-      ).join('');
+      grid.innerHTML = slots.map(s => {
+        const label = formatSlotLabel(s.slot_date, s.slot_time);
+        return `<div class="slot" data-id="${escapeAttr(s.id)}" data-label="${escapeAttr(label)}">${label}</div>`;
+      }).join('');
       grid.querySelectorAll('.slot').forEach(el => {
         el.addEventListener('click', () => {
           grid.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
@@ -210,12 +228,12 @@
         document.getElementById('bookingForm').style.display = 'none';
         document.getElementById('successMsg').classList.add('show');
       } else {
-        alert('Something went wrong. Please try again.');
+        alert('Something went wrong:\n\n' + await readError(res));
         btn.textContent = 'Request Appointment';
         btn.disabled = false;
       }
     } catch (e) {
-      alert('Something went wrong. Please try again.');
+      alert('Something went wrong:\n\n' + e.message);
       btn.textContent = 'Request Appointment';
       btn.disabled = false;
     }

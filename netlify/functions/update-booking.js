@@ -21,7 +21,13 @@ export default async (req) => {
   });
 
   if (!dbRes.ok) {
-    return new Response('Database error', { status: 500 });
+    const body = await dbRes.text();
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch {}
+    return new Response(JSON.stringify({ error: parsed?.message || body || 'Database error' }), {
+      status: dbRes.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   // If declined, free the slot back up so it reappears on the booking page

@@ -10,7 +10,13 @@ export default async (req) => {
   });
 
   if (!res.ok) {
-    return new Response('Database error', { status: 500 });
+    const body = await res.text();
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch {}
+    return new Response(JSON.stringify({ error: parsed?.message || body || 'Database error' }), {
+      status: res.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   const data = await res.json();

@@ -5,7 +5,8 @@ export default async (req) => {
   const url = new URL(req.url);
   const includeTaken = url.searchParams.get('all') === '1';
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Use Europe/London for "today" so UK time, not UTC, decides what's past
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
   let query = `slot_date=gte.${today}&order=slot_date.asc,slot_time.asc`;
   if (!includeTaken) query = `taken=eq.false&` + query;
 
@@ -17,7 +18,13 @@ export default async (req) => {
   });
 
   if (!res.ok) {
-    return new Response('Database error', { status: 500 });
+    const body = await res.text();
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch {}
+    return new Response(JSON.stringify({ error: parsed?.message || body || 'Database error' }), {
+      status: res.status,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   const data = await res.json();
