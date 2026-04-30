@@ -106,10 +106,6 @@
         <label>Email Address</label>
         <input type="email" id="email" placeholder="your@email.com" required />
       </div>
-      <div class="field">
-        <label>Phone Number</label>
-        <input type="tel" id="phone" placeholder="+44 7700 000000" required />
-      </div>
       <div class="section-label">Preferred Location</div>
       <div class="field">
         <label>Where would you like to meet?</label>
@@ -154,6 +150,9 @@
   </div>
   <div class="footer-note">You will receive a confirmation via email and text once your request is reviewed.</div>
   <div class="bottom-rule"></div>
+  <div style="margin-top:28px;text-align:center;">
+    <a href="/admin.html" style="display:inline-block;font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.3em;color:#C9A84C;text-decoration:none;text-transform:uppercase;border:1px solid #7a6530;padding:10px 22px;">Admin Login</a>
+  </div>
 </footer>
 <script>
   let selectedSlot = null;
@@ -170,10 +169,9 @@
     const firstName = document.getElementById('firstName').value.trim();
     const lastName = document.getElementById('lastName').value.trim();
     const email = document.getElementById('email').value.trim();
-    const phone = document.getElementById('phone').value.trim();
     const location = document.getElementById('location').value;
 
-    if (!firstName || !lastName || !email || !phone || !location || !selectedSlot) {
+    if (!firstName || !lastName || !email || !location || !selectedSlot) {
       alert('Please fill in all fields and select a time slot.');
       return;
     }
@@ -186,7 +184,7 @@
       const res = await fetch('/.netlify/functions/submit-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, phone, location, slotTime: selectedSlot })
+        body: JSON.stringify({ firstName, lastName, email, location, slotTime: selectedSlot })
       });
 
       if (res.ok) {
