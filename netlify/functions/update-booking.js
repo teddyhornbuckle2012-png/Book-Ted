@@ -3,7 +3,7 @@ export default async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const { id, status, email, firstName, location, slotTime } = await req.json();
+  const { id, status, email, firstName, location, slotTime, slotId } = await req.json();
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -22,6 +22,19 @@ export default async (req) => {
 
   if (!dbRes.ok) {
     return new Response('Database error', { status: 500 });
+  }
+
+  // If declined, free the slot back up so it reappears on the booking page
+  if (status === 'declined' && slotId) {
+    await fetch(`${SUPABASE_URL}/rest/v1/availability?id=eq.${slotId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({ taken: false })
+    });
   }
 
   // 2. Send email to the person based on status

@@ -119,15 +119,7 @@
       </div>
       <div class="section-label">Available Times</div>
       <div class="slots-grid" id="slotsGrid">
-        <div class="slot" data-time="Monday 10:00">MON 10:00</div>
-        <div class="slot" data-time="Monday 14:00">MON 14:00</div>
-        <div class="slot" data-time="Tuesday 11:00">TUE 11:00</div>
-        <div class="slot" data-time="Wednesday 10:00">WED 10:00</div>
-        <div class="slot" data-time="Thursday 15:00">THU 15:00</div>
-        <div class="slot" data-time="Friday 12:00">FRI 12:00</div>
-        <div class="slot" data-time="Saturday 10:00">SAT 10:00</div>
-        <div class="slot" data-time="Saturday 13:00">SAT 13:00</div>
-        <div class="slot" data-time="Sunday 11:00">SUN 11:00</div>
+        <div class="slots-loading" style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);font-style:italic;">Loading availability...</div>
       </div>
       <div class="pricing-note">
         <strong>£2.50</strong> non-refundable booking fee &nbsp;·&nbsp; <strong>£5.00</strong> refundable deposit<br/>
@@ -155,14 +147,42 @@
 </footer>
 <script>
   let selectedSlot = null;
+  let selectedSlotId = null;
 
-  document.querySelectorAll('.slot').forEach(slot => {
-    slot.addEventListener('click', () => {
-      document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
-      slot.classList.add('selected');
-      selectedSlot = slot.dataset.time;
-    });
-  });
+  const DOW = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const MONTH = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+  function formatSlotLabel(dateStr, timeStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${DOW[d.getDay()]} ${d.getDate()} ${MONTH[d.getMonth()]} · ${timeStr}`;
+  }
+
+  async function loadSlots() {
+    const grid = document.getElementById('slotsGrid');
+    try {
+      const res = await fetch('/.netlify/functions/get-slots');
+      const slots = await res.json();
+      if (!Array.isArray(slots) || slots.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);font-style:italic;">No availability at the moment — please check back soon.</div>';
+        return;
+      }
+      grid.innerHTML = slots.map(s =>
+        `<div class="slot" data-id="${s.id}" data-label="${formatSlotLabel(s.slot_date, s.slot_time)}">${formatSlotLabel(s.slot_date, s.slot_time)}</div>`
+      ).join('');
+      grid.querySelectorAll('.slot').forEach(el => {
+        el.addEventListener('click', () => {
+          grid.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
+          el.classList.add('selected');
+          selectedSlot = el.dataset.label;
+          selectedSlotId = el.dataset.id;
+        });
+      });
+    } catch (e) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);font-style:italic;">Could not load availability. Please refresh.</div>';
+    }
+  }
+
+  loadSlots();
 
   async function submitBooking() {
     const firstName = document.getElementById('firstName').value.trim();
@@ -183,7 +203,7 @@
       const res = await fetch('/.netlify/functions/submit-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, location, slotTime: selectedSlot })
+        body: JSON.stringify({ firstName, lastName, email, location, slotTime: selectedSlot, slotId: selectedSlotId })
       });
 
       if (res.ok) {

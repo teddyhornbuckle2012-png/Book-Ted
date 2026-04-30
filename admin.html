@@ -80,8 +80,44 @@
   .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-style: italic; }
   .loading { text-align: center; padding: 40px; color: var(--text-muted); font-style: italic; }
 
+  /* ── Availability calendar ── */
+  .avail-section { background: var(--surface); border: 1px solid #2a2318; border-top: 1px solid var(--gold-dim); padding: 28px 32px; margin-bottom: 40px; position: relative; }
+  .avail-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .cal-title { font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; }
+  .cal-nav { display: flex; gap: 8px; }
+  .cal-nav button { background: none; border: 1px solid #2a2318; color: var(--gold-dim); font-family: 'Cinzel', serif; font-size: 11px; padding: 6px 12px; cursor: pointer; transition: all 0.2s; }
+  .cal-nav button:hover { border-color: var(--gold); color: var(--gold); }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+  .cal-weekday { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; color: var(--gold-dim); text-align: center; padding: 6px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day { aspect-ratio: 1; background: var(--surface2); border: 1px solid #2a2318; padding: 6px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; cursor: pointer; transition: all 0.15s; position: relative; }
+  .cal-day:hover { border-color: var(--gold-dim); }
+  .cal-day.other-month { opacity: 0.3; cursor: default; }
+  .cal-day.past { opacity: 0.35; cursor: not-allowed; background: transparent; }
+  .cal-day.today { border-color: var(--gold-dim); }
+  .cal-day.selected { border-color: var(--gold); background: #1a1508; }
+  .cal-day.has-slots { border-color: var(--gold-dim); }
+  .cal-daynum { font-family: 'Cinzel', serif; font-size: 13px; color: var(--text); }
+  .cal-day.past .cal-daynum, .cal-day.other-month .cal-daynum { color: var(--text-muted); }
+  .cal-dot { width: 5px; height: 5px; background: var(--gold); transform: rotate(45deg); margin-top: 6px; }
+  .cal-count { font-family: 'Cinzel', serif; font-size: 9px; color: var(--gold); margin-top: 2px; letter-spacing: 0.1em; }
+  .day-detail { margin-top: 22px; border-top: 1px solid #2a2318; padding-top: 22px; display: none; }
+  .day-detail.open { display: block; }
+  .day-detail-header { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase; margin-bottom: 16px; }
+  .slot-row { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid #2a2318; padding: 10px 14px; margin-bottom: 8px; }
+  .slot-row .slot-time { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); letter-spacing: 0.15em; }
+  .slot-row .btn-remove { background: none; border: 1px solid #3a1818; color: var(--red); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 6px 10px; cursor: pointer; }
+  .slot-row .btn-remove:hover { background: #2a0f0f; }
+  .add-slot-form { display: flex; gap: 8px; margin-top: 14px; }
+  .add-slot-form input { flex: 1; background: var(--surface2); border: 1px solid #2a2318; border-bottom: 1px solid var(--gold-dim); color: var(--text); font-family: 'Cormorant Garamond', serif; font-size: 16px; padding: 10px 14px; outline: none; border-radius: 0; }
+  .add-slot-form input:focus { border-color: var(--gold); }
+  .add-slot-form button { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold-dim); color: var(--gold); font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.25em; padding: 0 18px; cursor: pointer; }
+  .add-slot-form button:hover { border-color: var(--gold); color: var(--gold-light); }
+  .day-empty { color: var(--text-muted); font-style: italic; font-size: 14px; margin-bottom: 8px; }
+
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-  @media (max-width: 600px) { .dash-header { padding: 20px; } .dash-content { padding: 20px; } .booking-card { grid-template-columns: 1fr; } .booking-actions { flex-direction: row; } }
+  @media (max-width: 600px) { .dash-header { padding: 20px; } .dash-content { padding: 20px; } .booking-card { grid-template-columns: 1fr; } .booking-actions { flex-direction: row; } .avail-section { padding: 22px 18px; } .cal-day { padding: 4px; } .cal-daynum { font-size: 11px; } }
 </style>
 </head>
 <body>
@@ -116,6 +152,35 @@
   </div>
 
   <div class="dash-content">
+    <div class="dash-title">Availability</div>
+    <div class="avail-section">
+      <div class="cal-header">
+        <div class="cal-title" id="calMonthLabel">—</div>
+        <div class="cal-nav">
+          <button onclick="changeMonth(-1)">‹ PREV</button>
+          <button onclick="changeMonth(1)">NEXT ›</button>
+        </div>
+      </div>
+      <div class="cal-weekdays">
+        <div class="cal-weekday">SUN</div>
+        <div class="cal-weekday">MON</div>
+        <div class="cal-weekday">TUE</div>
+        <div class="cal-weekday">WED</div>
+        <div class="cal-weekday">THU</div>
+        <div class="cal-weekday">FRI</div>
+        <div class="cal-weekday">SAT</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="day-detail" id="dayDetail">
+        <div class="day-detail-header" id="dayDetailHeader">—</div>
+        <div id="dayDetailSlots"></div>
+        <form class="add-slot-form" onsubmit="addSlot(event)">
+          <input type="time" id="newSlotTime" required />
+          <button type="submit">Add Time</button>
+        </form>
+      </div>
+    </div>
+
     <div class="dash-title">Booking Requests</div>
 
     <div class="filter-tabs">
@@ -135,6 +200,11 @@
   const ADMIN_PASSWORD = 'Lessreverb1#LOL';
   let allBookings = [];
   let currentFilter = 'all';
+  let allSlots = [];
+  let calCursor = new Date();
+  calCursor.setDate(1);
+  let selectedDate = null;
+  const MONTH_NAMES = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
 
   function login() {
     const pw = document.getElementById('passwordInput').value;
@@ -142,6 +212,7 @@
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       loadBookings();
+      loadSlots();
     } else {
       document.getElementById('loginError').style.display = 'block';
     }
@@ -194,26 +265,157 @@
         </div>
         <div class="booking-actions">
           ${b.status === 'pending' ? `
-            <button class="btn-confirm" onclick="updateBooking('${b.id}', 'confirmed', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}')">✓ CONFIRM</button>
-            <button class="btn-decline" onclick="updateBooking('${b.id}', 'declined', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}')">✗ DECLINE</button>
+            <button class="btn-confirm" onclick="updateBooking('${b.id}', 'confirmed', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}', '${b.slot_id || ''}')">✓ CONFIRM</button>
+            <button class="btn-decline" onclick="updateBooking('${b.id}', 'declined', '${b.email}', '${b.first_name}', '${b.location}', '${b.slot_time}', '${b.slot_id || ''}')">✗ DECLINE</button>
           ` : `<div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);">${b.status.toUpperCase()}</div>`}
         </div>
       </div>
     `).join('');
   }
 
-  async function updateBooking(id, status, email, firstName, location, slotTime) {
+  async function updateBooking(id, status, email, firstName, location, slotTime, slotId) {
     const res = await fetch('/.netlify/functions/update-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status, email, firstName, location, slotTime })
+      body: JSON.stringify({ id, status, email, firstName, location, slotTime, slotId })
     });
 
     if (res.ok) {
       allBookings = allBookings.map(b => b.id === id ? { ...b, status } : b);
       renderBookings();
+      if (status === 'declined') loadSlots();
     } else {
       alert('Something went wrong. Please try again.');
+    }
+  }
+
+  /* ── Availability calendar ── */
+  async function loadSlots() {
+    try {
+      const res = await fetch('/.netlify/functions/get-slots');
+      allSlots = await res.json();
+      if (!Array.isArray(allSlots)) allSlots = [];
+    } catch (e) {
+      allSlots = [];
+    }
+    renderCalendar();
+    if (selectedDate) renderDayDetail();
+  }
+
+  function ymd(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function changeMonth(delta) {
+    calCursor.setMonth(calCursor.getMonth() + delta);
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('calGrid');
+    const label = document.getElementById('calMonthLabel');
+    label.textContent = `${MONTH_NAMES[calCursor.getMonth()]} ${calCursor.getFullYear()}`;
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    const firstOfMonth = new Date(calCursor.getFullYear(), calCursor.getMonth(), 1);
+    const startOffset = firstOfMonth.getDay();
+    const start = new Date(firstOfMonth);
+    start.setDate(start.getDate() - startOffset);
+
+    const cells = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      const dateStr = ymd(d);
+      const isOtherMonth = d.getMonth() !== calCursor.getMonth();
+      const isPast = d < today;
+      const isToday = d.getTime() === today.getTime();
+      const slotsThisDay = allSlots.filter(s => s.slot_date === dateStr);
+      const cls = ['cal-day'];
+      if (isOtherMonth) cls.push('other-month');
+      if (isPast) cls.push('past');
+      if (isToday) cls.push('today');
+      if (selectedDate === dateStr) cls.push('selected');
+      if (slotsThisDay.length > 0) cls.push('has-slots');
+
+      const clickable = !isPast && !isOtherMonth;
+      cells.push(`
+        <div class="${cls.join(' ')}" ${clickable ? `onclick="selectDate('${dateStr}')"` : ''}>
+          <div class="cal-daynum">${d.getDate()}</div>
+          ${slotsThisDay.length > 0 ? `<div class="cal-count">${slotsThisDay.length}</div>` : ''}
+        </div>
+      `);
+    }
+    grid.innerHTML = cells.join('');
+  }
+
+  function selectDate(dateStr) {
+    selectedDate = dateStr;
+    renderCalendar();
+    renderDayDetail();
+  }
+
+  function renderDayDetail() {
+    const detail = document.getElementById('dayDetail');
+    const header = document.getElementById('dayDetailHeader');
+    const list = document.getElementById('dayDetailSlots');
+    if (!selectedDate) { detail.classList.remove('open'); return; }
+
+    detail.classList.add('open');
+    const d = new Date(selectedDate + 'T00:00:00');
+    const DOW = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+    header.textContent = `${DOW[d.getDay()]} · ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+
+    const slotsThisDay = allSlots.filter(s => s.slot_date === selectedDate)
+      .sort((a, b) => a.slot_time.localeCompare(b.slot_time));
+
+    if (slotsThisDay.length === 0) {
+      list.innerHTML = '<div class="day-empty">No times added for this date yet.</div>';
+    } else {
+      list.innerHTML = slotsThisDay.map(s => `
+        <div class="slot-row">
+          <div class="slot-time">${s.slot_time}</div>
+          <button class="btn-remove" onclick="removeSlot('${s.id}')">✗ REMOVE</button>
+        </div>
+      `).join('');
+    }
+  }
+
+  async function addSlot(ev) {
+    ev.preventDefault();
+    if (!selectedDate) { alert('Pick a date on the calendar first.'); return; }
+    const timeInput = document.getElementById('newSlotTime');
+    const time = timeInput.value;
+    if (!time) return;
+
+    const res = await fetch('/.netlify/functions/add-slot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot_date: selectedDate, slot_time: time })
+    });
+    if (res.ok) {
+      timeInput.value = '';
+      await loadSlots();
+    } else {
+      const msg = await res.text();
+      alert(msg.includes('duplicate') ? 'That time is already added for this date.' : 'Could not add slot.');
+    }
+  }
+
+  async function removeSlot(id) {
+    if (!confirm('Remove this time slot?')) return;
+    const res = await fetch('/.netlify/functions/delete-slot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    if (res.ok) {
+      await loadSlots();
+    } else {
+      alert('Could not remove slot.');
     }
   }
 </script>

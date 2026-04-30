@@ -3,7 +3,7 @@ export default async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const { firstName, lastName, email, location, slotTime } = await req.json();
+  const { firstName, lastName, email, location, slotTime, slotId } = await req.json();
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -25,6 +25,7 @@ export default async (req) => {
       email,
       location,
       slot_time: slotTime,
+      slot_id: slotId || null,
       status: 'pending',
       paid: false
     })
@@ -32,6 +33,19 @@ export default async (req) => {
 
   if (!dbRes.ok) {
     return new Response('Database error', { status: 500 });
+  }
+
+  // Mark the slot as taken so it disappears from the booking page
+  if (slotId) {
+    await fetch(`${SUPABASE_URL}/rest/v1/availability?id=eq.${slotId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({ taken: true })
+    });
   }
 
   // 2. Send confirmation email to the person booking
