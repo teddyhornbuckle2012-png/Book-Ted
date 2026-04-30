@@ -44,13 +44,13 @@ export default async (req) => {
     body: JSON.stringify({
       from: 'Book Ted <onboarding@resend.dev>',
       to: email,
-      subject: 'BOOK TED — Booking Request Received',
+      subject: 'BOOK TED — Appointment Request Received',
       html: `
         <div style="background:#0a0a0a;color:#f0e8d8;font-family:Georgia,serif;padding:40px;max-width:560px;margin:0 auto;">
           <h1 style="font-family:serif;color:#C9A84C;letter-spacing:0.2em;font-size:28px;margin-bottom:8px;">BOOK TED</h1>
           <p style="color:#7a6530;font-style:italic;margin-bottom:32px;">A private appointment service</p>
           <h2 style="color:#C9A84C;font-size:16px;letter-spacing:0.15em;">REQUEST RECEIVED</h2>
-          <p style="margin:20px 0;line-height:1.8;">Hi ${firstName},<br/><br/>Your booking request has been received. Ted will review it and confirm your slot shortly.</p>
+          <p style="margin:20px 0;line-height:1.8;">Your appointment request has been received and is awaiting review. A confirmation will be issued once the slot is approved.</p>
           <div style="border-left:2px solid #C9A84C;padding:16px 20px;background:#111;margin:24px 0;">
             <p style="margin:0;line-height:2;color:#8a7a60;">
               <strong style="color:#C9A84C;">Name:</strong> ${firstName} ${lastName}<br/>
@@ -58,10 +58,8 @@ export default async (req) => {
               <strong style="color:#C9A84C;">Requested Time:</strong> ${slotTime}
             </p>
           </div>
-          <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;">
-            Payment will only be requested once Ted confirms your appointment.<br/>
-            The £5 deposit is fully refunded when Ted arrives.<br/>
-            The £2.50 booking fee is non-refundable.
+          <p style="color:#8a7a60;font-size:14px;line-height:1.8;">
+            A £2.50 non-refundable booking fee and £5.00 refundable deposit are payable upon confirmation. The deposit is returned in full upon Ted&rsquo;s arrival.
           </p>
         </div>
       `
