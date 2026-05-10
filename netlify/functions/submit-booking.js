@@ -3,12 +3,12 @@ export default async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const { firstName, lastName, email, location, slotTime, slotId } = await req.json();
+  const { firstName, lastName, email, phone, location, slotTime, slotId } = await req.json();
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
-  const TED_EMAIL = process.env.TED_EMAIL;
+  const TED_EMAIL = 'teddyhornbuckle2012@gmail.com';
 
   // 1. Save booking to Supabase
   const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/bookings`, {
@@ -23,6 +23,7 @@ export default async (req) => {
       first_name: firstName,
       last_name: lastName,
       email,
+      phone,
       location,
       slot_time: slotTime,
       slot_id: slotId || null,
@@ -107,6 +108,7 @@ export default async (req) => {
             <p style="margin:0;line-height:2;color:#8a7a60;">
               <strong style="color:#C9A84C;">Name:</strong> ${firstName} ${lastName}<br/>
               <strong style="color:#C9A84C;">Email:</strong> ${email}<br/>
+              <strong style="color:#C9A84C;">Phone:</strong> ${phone}<br/>
               <strong style="color:#C9A84C;">Location:</strong> ${location}<br/>
               <strong style="color:#C9A84C;">Requested Time:</strong> ${slotTime}
             </p>

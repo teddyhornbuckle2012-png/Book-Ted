@@ -278,6 +278,7 @@
             <div class="booking-status status-${escapeHtml(b.status)}">${escapeHtml(statusUpper)}</div>
             <div class="booking-details">
               <div class="booking-detail">📧 <span>${escapeHtml(b.email)}</span></div>
+              <div class="booking-detail">📱 <span>${escapeHtml(b.phone || '—')}</span></div>
               <div class="booking-detail">📍 <span>${escapeHtml(b.location)}</span></div>
               <div class="booking-detail">🕐 <span>${escapeHtml(b.slot_time)}</span></div>
               <div class="booking-detail">💳 <span>${b.paid ? 'Paid' : 'Unpaid'}</span></div>
@@ -300,17 +301,17 @@
           const b = allBookings.find(x => x.id === id);
           if (!b) return;
           const newStatus = btn.dataset.action === 'confirm' ? 'confirmed' : 'declined';
-          updateBooking(b.id, newStatus, b.email, b.first_name, b.location, b.slot_time, b.slot_id || '');
+          updateBooking(b.id, newStatus, b.email, b.first_name, b.last_name, b.phone, b.location, b.slot_time, b.slot_id || '');
         });
       });
     });
   }
 
-  async function updateBooking(id, status, email, firstName, location, slotTime, slotId) {
+  async function updateBooking(id, status, email, firstName, lastName, phone, location, slotTime, slotId) {
     const res = await fetch('/.netlify/functions/update-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status, email, firstName, location, slotTime, slotId })
+      body: JSON.stringify({ id, status, email, firstName, lastName, phone, location, slotTime, slotId })
     });
 
     if (res.ok) {

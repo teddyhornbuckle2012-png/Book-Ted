@@ -3,11 +3,12 @@ export default async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const { id, status, email, firstName, location, slotTime, slotId } = await req.json();
+  const { id, status, email, firstName, lastName, phone, location, slotTime, slotId } = await req.json();
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
+  const TED_EMAIL = 'teddyhornbuckle2012@gmail.com';
 
   // 1. Update booking status in Supabase
   const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
@@ -66,7 +67,7 @@ export default async (req) => {
       <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;">
         The £5.00 deposit is fully refunded when Ted arrives.<br/>
         The £2.50 booking fee is non-refundable.<br/><br/>
-        Ted will send your payment link shortly.
+        Ted will text you the payment details shortly to the number you provided.
       </p>
     </div>
   ` : `
@@ -92,6 +93,42 @@ export default async (req) => {
       html
     })
   });
+
+  // 3. On confirm, also email Ted with the customer's contact details so he can text them payment details
+  if (isConfirmed && TED_EMAIL) {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_KEY}`
+      },
+      body: JSON.stringify({
+        from: 'Book Ted <onboarding@resend.dev>',
+        to: TED_EMAIL,
+        subject: 'BOOK TED — Confirmed: send payment details',
+        html: `
+          <div style="background:#0a0a0a;color:#f0e8d8;font-family:Georgia,serif;padding:40px;max-width:560px;margin:0 auto;">
+            <h1 style="font-family:serif;color:#C9A84C;letter-spacing:0.2em;font-size:28px;margin-bottom:8px;">BOOK TED</h1>
+            <p style="color:#7a6530;font-style:italic;margin-bottom:32px;">Admin Notification</p>
+            <h2 style="color:#C9A84C;font-size:16px;letter-spacing:0.15em;">APPOINTMENT CONFIRMED</h2>
+            <p style="margin:20px 0;line-height:1.8;">You confirmed this booking. Text the customer your bank details so they can pay the £7.50 (£2.50 fee + £5.00 deposit).</p>
+            <div style="border-left:2px solid #C9A84C;padding:16px 20px;background:#111;margin:24px 0;">
+              <p style="margin:0;line-height:2;color:#8a7a60;">
+                <strong style="color:#C9A84C;">Name:</strong> ${firstName || ''} ${lastName || ''}<br/>
+                <strong style="color:#C9A84C;">Phone:</strong> ${phone || '(not provided)'}<br/>
+                <strong style="color:#C9A84C;">Email:</strong> ${email || ''}<br/>
+                <strong style="color:#C9A84C;">Location:</strong> ${location || ''}<br/>
+                <strong style="color:#C9A84C;">Time:</strong> ${slotTime || ''}
+              </p>
+            </div>
+            <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;">
+              Once payment lands, mark the booking as paid in the admin dashboard.
+            </p>
+          </div>
+        `
+      })
+    });
+  }
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200,
