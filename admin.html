@@ -63,6 +63,7 @@
   .booking-card { background: var(--surface); border: 1px solid #2a2318; border-left: 2px solid var(--gold-dim); padding: 24px 28px; display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: center; animation: fadeUp 0.4s ease both; }
   .booking-card.confirmed { border-left-color: var(--green); }
   .booking-card.declined { border-left-color: var(--red); opacity: 0.6; }
+  .booking-card.cancelled { border-left-color: var(--text-muted); opacity: 0.6; }
   .booking-name { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 10px; }
   .booking-details { display: flex; flex-wrap: wrap; gap: 16px; }
   .booking-detail { font-size: 14px; color: var(--text-muted); }
@@ -71,6 +72,9 @@
   .status-pending { color: var(--gold); border-color: var(--gold-dim); }
   .status-confirmed { color: var(--green); border-color: var(--green); }
   .status-declined { color: var(--red); border-color: var(--red); }
+  .status-cancelled { color: var(--text-muted); border-color: var(--text-muted); }
+  .btn-cancel { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold-dim); color: var(--gold-dim); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
+  .btn-cancel:hover { border-color: var(--red); color: var(--red); }
   .booking-actions { display: flex; flex-direction: column; gap: 10px; min-width: 130px; }
   .btn-confirm { background: linear-gradient(135deg, #0a1a0f, #0f2a18); border: 1px solid var(--green); color: var(--green); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
   .btn-confirm:hover { background: #0f2a18; box-shadow: 0 0 12px rgba(76,175,125,0.15); }
@@ -188,6 +192,7 @@
       <button class="tab" onclick="filterBookings('pending', this)">Pending</button>
       <button class="tab" onclick="filterBookings('confirmed', this)">Confirmed</button>
       <button class="tab" onclick="filterBookings('declined', this)">Declined</button>
+      <button class="tab" onclick="filterBookings('cancelled', this)">Cancelled</button>
     </div>
 
     <div class="bookings-list" id="bookingsList">
@@ -288,6 +293,8 @@
             ${b.status === 'pending' ? `
               <button class="btn-confirm" data-action="confirm">✓ CONFIRM</button>
               <button class="btn-decline" data-action="decline">✗ DECLINE</button>
+            ` : b.status === 'confirmed' ? `
+              <button class="btn-cancel" data-action="cancel">CANCEL</button>
             ` : `<div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);">${escapeHtml(statusUpper)}</div>`}
           </div>
         </div>
@@ -300,7 +307,12 @@
         btn.addEventListener('click', () => {
           const b = allBookings.find(x => x.id === id);
           if (!b) return;
-          const newStatus = btn.dataset.action === 'confirm' ? 'confirmed' : 'declined';
+          let newStatus;
+          if (btn.dataset.action === 'confirm') newStatus = 'confirmed';
+          else if (btn.dataset.action === 'cancel') {
+            if (!confirm('Cancel this confirmed booking? The customer will be emailed and the slot will not be re-opened.')) return;
+            newStatus = 'cancelled';
+          } else newStatus = 'declined';
           updateBooking(b.id, newStatus, b.email, b.first_name, b.last_name, b.phone, b.location, b.slot_time, b.slot_id || '');
         });
       });
