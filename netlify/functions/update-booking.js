@@ -10,6 +10,22 @@ export default async (req) => {
   const RESEND_KEY = process.env.RESEND_API_KEY;
   const TED_EMAIL = 'teddyhornbuckle2012@gmail.com';
 
+  const locationMapsUrl = (loc) => {
+    const map = {
+      'Costa St Michaels Sq': 'Costa+Coffee+Grosvenor+Shopping+Centre+St+Michaels+Square+Chester',
+      'Costa Watergate St': 'Costa+Coffee+14+Watergate+Street+Chester',
+      'Caffè Nero Eastgate St': 'Caff%C3%A8+Nero+19+Eastgate+Street+Chester',
+      'Caffè Nero Bridge St': 'Caff%C3%A8+Nero+52+Bridge+Street+Chester',
+      'Caffè Nero Foregate St': 'Caff%C3%A8+Nero+74+Foregate+Street+Chester',
+      'Starbucks Foregate St': 'Starbucks+18+Foregate+Street+Chester',
+      'Starbucks Northgate St': 'Starbucks+18+Northgate+Street+Chester',
+      'EL&N Harrods Beauty': 'EL%26N+Harrods+Beauty+Grosvenor+Shopping+Centre+Chester'
+    };
+    const q = map[loc] || encodeURIComponent((loc || '') + ' Chester');
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  };
+  const mapsUrl = locationMapsUrl(location);
+
   // 1. Update booking status in Supabase
   const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
     method: 'PATCH',
@@ -74,6 +90,7 @@ export default async (req) => {
         The £2.50 booking fee is non-refundable.<br/><br/>
         Ted will text you the payment details shortly to the number you provided.
       </p>
+      <a href="${mapsUrl}" style="display:inline-block;background:#1a1408;border:1px solid #C9A84C;color:#C9A84C;font-family:serif;font-size:13px;letter-spacing:0.2em;padding:14px 28px;text-decoration:none;margin-top:8px;">VIEW LOCATION ON GOOGLE MAPS</a>
     </div>
     `;
   } else if (isCancelled) {
