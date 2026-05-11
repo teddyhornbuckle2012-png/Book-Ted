@@ -66,6 +66,14 @@
   .success-msg.show { display: block; }
   .success-msg h2 { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: 0.2em; font-size: 20px; margin-bottom: 16px; }
   .success-msg p { color: var(--text-muted); font-style: italic; line-height: 1.8; }
+  .success-msg .success-tick { display: block; margin: 0 auto 28px; }
+  .success-msg .success-tick circle { stroke-dasharray: 226; stroke-dashoffset: 226; }
+  .success-msg .success-tick-path { stroke-dasharray: 60; stroke-dashoffset: 60; }
+  .success-msg.show .success-tick circle { animation: drawCircle 0.55s ease forwards; }
+  .success-msg.show .success-tick-path { animation: drawTick 0.4s 0.5s ease forwards; }
+  .success-msg .spam-note { font-size: 13px; color: var(--text-muted); margin-top: 22px; font-style: italic; }
+  @keyframes drawCircle { to { stroke-dashoffset: 0; } }
+  @keyframes drawTick { to { stroke-dashoffset: 0; } }
   footer { text-align: center; padding: 0 20px 48px; }
   .footer-note { font-size: 13px; font-style: italic; color: var(--text-muted); margin-bottom: 20px; }
   .footer-diamonds { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
@@ -136,8 +144,13 @@
       <button class="btn-submit" onclick="submitBooking()">Request Appointment</button>
     </div>
     <div class="success-msg" id="successMsg">
-      <h2>REQUEST RECEIVED</h2>
-      <p>Thank you for your booking request.<br/>You will receive a confirmation via email and text shortly.<br/><br/>Payment will only be requested once Ted has confirmed your slot.</p>
+      <svg class="success-tick" viewBox="0 0 80 80" width="84" height="84" aria-hidden="true">
+        <circle cx="40" cy="40" r="36" fill="none" stroke="#C9A84C" stroke-width="2"/>
+        <path class="success-tick-path" d="M22 42 L36 56 L60 28" fill="none" stroke="#C9A84C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2>SUCCESSFUL</h2>
+      <p>Your booking request has been submitted.<br/>We will be in touch shortly via email to confirm your appointment.</p>
+      <p class="spam-note">If our email does not appear in your inbox within a few minutes, please check your spam folder.</p>
     </div>
   </div>
 </div>
