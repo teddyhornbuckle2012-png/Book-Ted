@@ -63,7 +63,7 @@ export default async (req) => {
       'Authorization': `Bearer ${RESEND_KEY}`
     },
     body: JSON.stringify({
-      from: 'Book Ted <onboarding@resend.dev>',
+      from: 'Book Ted <bookings@bookted.uk>',
       to: email,
       subject: 'BOOK TED — Appointment Request Received',
       html: `
@@ -95,7 +95,7 @@ export default async (req) => {
       'Authorization': `Bearer ${RESEND_KEY}`
     },
     body: JSON.stringify({
-      from: 'Book Ted <onboarding@resend.dev>',
+      from: 'Book Ted <bookings@bookted.uk>',
       to: TED_EMAIL,
       subject: 'BOOK TED — New Booking Request',
       html: `
