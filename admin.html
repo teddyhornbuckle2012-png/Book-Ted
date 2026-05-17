@@ -312,7 +312,9 @@
           if (!b) return;
           if (btn.dataset.action === 'mark-paid') {
             if (!confirm(`Mark this booking as paid? The customer will be emailed an invoice (PDF) confirming payment of £7.50.`)) return;
-            markAsPaid(b);
+            btn.disabled = true;
+            btn.textContent = 'PROCESSING…';
+            markAsPaid(b, btn);
             return;
           }
           let newStatus;
@@ -346,7 +348,7 @@
     }
   }
 
-  async function markAsPaid(b) {
+  async function markAsPaid(b, btn) {
     const res = await fetch('/.netlify/functions/mark-paid', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -365,6 +367,7 @@
       renderBookings();
     } else {
       alert('Could not mark as paid:\n\n' + await readError(res));
+      if (btn) { btn.disabled = false; btn.textContent = '£ MARK AS PAID'; }
     }
   }
 

@@ -74,7 +74,8 @@ export default async () => {
   }
 
   // 2. Fetch confirmed bookings tied to those slots
-  const idList = availSlots.map(s => `"${s.id}"`).join(',');
+  // UUIDs go in unquoted — PostgREST requires no quoting for uuid columns
+  const idList = availSlots.map(s => s.id).join(',');
   const bookingsRes = await fetch(
     `${SUPABASE_URL}/rest/v1/bookings?status=eq.confirmed&slot_id=in.(${idList})`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }

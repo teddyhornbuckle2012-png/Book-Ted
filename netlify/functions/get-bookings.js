@@ -2,7 +2,7 @@ export default async (req) => {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
 
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?order=slot_time.asc`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/bookings?order=created_at.desc`, {
     headers: {
       'apikey': SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`
