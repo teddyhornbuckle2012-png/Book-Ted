@@ -3,7 +3,7 @@ export default async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const { id, status, email, firstName, lastName, phone, location, slotTime, slotId } = await req.json();
+  const { id, status, email, firstName, lastName, phone, location, slotTime, slotId, paymentLink } = await req.json();
 
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -72,12 +72,19 @@ export default async (req) => {
 
   let html;
   if (isConfirmed) {
+    const hasLink = paymentLink && /^https?:\/\//i.test(paymentLink);
+    const payBlock = hasLink
+      ? `<a href="${paymentLink}" style="display:inline-block;background:#1a1408;border:1px solid #C9A84C;color:#C9A84C;font-family:serif;font-size:13px;letter-spacing:0.2em;padding:14px 32px;text-decoration:none;margin-right:10px;">PAY £7.50</a>`
+      : '';
+    const paymentLine = hasLink
+      ? 'Use the button below to complete your payment securely.'
+      : 'Ted will text you the payment details shortly to the number you provided.';
     html = `
     <div style="background:#0a0a0a;color:#f0e8d8;font-family:Georgia,serif;padding:40px;max-width:560px;margin:0 auto;">
       <h1 style="font-family:serif;color:#C9A84C;letter-spacing:0.2em;font-size:28px;margin-bottom:8px;">BOOK TED</h1>
       <p style="color:#7a6530;font-style:italic;margin-bottom:32px;">A private appointment service</p>
       <h2 style="color:#C9A84C;font-size:16px;letter-spacing:0.15em;">APPOINTMENT CONFIRMED</h2>
-      <p style="margin:20px 0;line-height:1.8;">Hi ${firstName},<br/><br/>Your appointment has been confirmed by Ted! Please complete your payment to fully secure your slot.</p>
+      <p style="margin:20px 0;line-height:1.8;">Hi ${firstName},<br/><br/>Your appointment has been confirmed by Ted. Please complete your payment to fully secure your slot.</p>
       <div style="border-left:2px solid #C9A84C;padding:16px 20px;background:#111;margin:24px 0;">
         <p style="margin:0;line-height:2;color:#8a7a60;">
           <strong style="color:#C9A84C;">Location:</strong> ${location}<br/>
@@ -88,8 +95,9 @@ export default async (req) => {
       <p style="color:#8a7a60;font-style:italic;font-size:14px;line-height:1.8;">
         The £5.00 deposit is fully refunded when Ted arrives.<br/>
         The £2.50 booking fee is non-refundable.<br/><br/>
-        Ted will text you the payment details shortly to the number you provided.
+        ${paymentLine}
       </p>
+      ${payBlock}
       <a href="${mapsUrl}" style="display:inline-block;background:#1a1408;border:1px solid #C9A84C;color:#C9A84C;font-family:serif;font-size:13px;letter-spacing:0.2em;padding:14px 28px;text-decoration:none;margin-top:8px;">VIEW LOCATION ON GOOGLE MAPS</a>
     </div>
     `;

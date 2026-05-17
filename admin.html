@@ -75,6 +75,8 @@
   .status-cancelled { color: var(--text-muted); border-color: var(--text-muted); }
   .btn-cancel { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold-dim); color: var(--gold-dim); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
   .btn-cancel:hover { border-color: var(--red); color: var(--red); }
+  .btn-paid { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold); color: var(--gold); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
+  .btn-paid:hover { background: #2a2010; box-shadow: 0 0 12px rgba(201,168,76,0.18); }
   .booking-actions { display: flex; flex-direction: column; gap: 10px; min-width: 130px; }
   .btn-confirm { background: linear-gradient(135deg, #0a1a0f, #0f2a18); border: 1px solid var(--green); color: var(--green); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
   .btn-confirm:hover { background: #0f2a18; box-shadow: 0 0 12px rgba(76,175,125,0.15); }
@@ -294,6 +296,7 @@
               <button class="btn-confirm" data-action="confirm">✓ CONFIRM</button>
               <button class="btn-decline" data-action="decline">✗ DECLINE</button>
             ` : b.status === 'confirmed' ? `
+              ${!b.paid ? `<button class="btn-paid" data-action="mark-paid">£ MARK AS PAID</button>` : ''}
               <button class="btn-cancel" data-action="cancel">CANCEL</button>
             ` : `<div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);">${escapeHtml(statusUpper)}</div>`}
           </div>
@@ -307,23 +310,31 @@
         btn.addEventListener('click', () => {
           const b = allBookings.find(x => x.id === id);
           if (!b) return;
+          if (btn.dataset.action === 'mark-paid') {
+            if (!confirm(`Mark this booking as paid? The customer will be emailed an invoice (PDF) confirming payment of £7.50.`)) return;
+            markAsPaid(b);
+            return;
+          }
           let newStatus;
-          if (btn.dataset.action === 'confirm') newStatus = 'confirmed';
-          else if (btn.dataset.action === 'cancel') {
+          let paymentLink = '';
+          if (btn.dataset.action === 'confirm') {
+            newStatus = 'confirmed';
+            paymentLink = prompt('Paste a payment link to include in the confirmation email (optional — leave blank to text the details instead):') || '';
+          } else if (btn.dataset.action === 'cancel') {
             if (!confirm('Cancel this confirmed booking? The customer will be emailed and the slot will not be re-opened.')) return;
             newStatus = 'cancelled';
           } else newStatus = 'declined';
-          updateBooking(b.id, newStatus, b.email, b.first_name, b.last_name, b.phone, b.location, b.slot_time, b.slot_id || '');
+          updateBooking(b.id, newStatus, b.email, b.first_name, b.last_name, b.phone, b.location, b.slot_time, b.slot_id || '', paymentLink);
         });
       });
     });
   }
 
-  async function updateBooking(id, status, email, firstName, lastName, phone, location, slotTime, slotId) {
+  async function updateBooking(id, status, email, firstName, lastName, phone, location, slotTime, slotId, paymentLink) {
     const res = await fetch('/.netlify/functions/update-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status, email, firstName, lastName, phone, location, slotTime, slotId })
+      body: JSON.stringify({ id, status, email, firstName, lastName, phone, location, slotTime, slotId, paymentLink })
     });
 
     if (res.ok) {
@@ -332,6 +343,28 @@
       if (status === 'declined') loadSlots();
     } else {
       alert('Something went wrong:\n\n' + await readError(res));
+    }
+  }
+
+  async function markAsPaid(b) {
+    const res = await fetch('/.netlify/functions/mark-paid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: b.id,
+        firstName: b.first_name,
+        lastName: b.last_name,
+        email: b.email,
+        phone: b.phone,
+        location: b.location,
+        slotTime: b.slot_time
+      })
+    });
+    if (res.ok) {
+      allBookings = allBookings.map(x => x.id === b.id ? { ...x, paid: true } : x);
+      renderBookings();
+    } else {
+      alert('Could not mark as paid:\n\n' + await readError(res));
     }
   }
 
