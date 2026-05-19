@@ -195,7 +195,7 @@
   async function loadSlots() {
     const grid = document.getElementById('slotsGrid');
     try {
-      const res = await fetch('/.netlify/functions/get-slots');
+      const res = await fetch('/api/get-slots');
       if (!res.ok) {
         grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-muted);font-style:italic;">Could not load availability. Please refresh.</div>';
         return;
@@ -241,7 +241,7 @@
     btn.disabled = true;
 
     try {
-      const res = await fetch('/.netlify/functions/submit-booking', {
+      const res = await fetch('/api/submit-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName, lastName, email, phone, location, slotTime: selectedSlot, slotId: selectedSlotId })

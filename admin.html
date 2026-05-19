@@ -242,7 +242,7 @@
 
   async function loadBookings() {
     try {
-      const res = await fetch('/.netlify/functions/get-bookings');
+      const res = await fetch('/api/get-bookings');
       if (!res.ok) {
         const msg = await readError(res);
         document.getElementById('bookingsList').innerHTML = `<div class="empty-state">Could not load bookings.<br/><br/><span style="font-size:12px;">${msg}</span></div>`;
@@ -333,7 +333,7 @@
   }
 
   async function updateBooking(id, status, email, firstName, lastName, phone, location, slotTime, slotId, paymentLink) {
-    const res = await fetch('/.netlify/functions/update-booking', {
+    const res = await fetch('/api/update-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status, email, firstName, lastName, phone, location, slotTime, slotId, paymentLink })
@@ -349,7 +349,7 @@
   }
 
   async function markAsPaid(b, btn) {
-    const res = await fetch('/.netlify/functions/mark-paid', {
+    const res = await fetch('/api/mark-paid', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -374,7 +374,7 @@
   /* ── Availability calendar ── */
   async function loadSlots() {
     try {
-      const res = await fetch('/.netlify/functions/get-slots');
+      const res = await fetch('/api/get-slots');
       if (!res.ok) {
         const msg = await readError(res);
         alert('Could not load availability:\n\n' + msg);
@@ -479,7 +479,7 @@
     const time = timeInput.value;
     if (!time) return;
 
-    const res = await fetch('/.netlify/functions/add-slot', {
+    const res = await fetch('/api/add-slot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slot_date: selectedDate, slot_time: time })
@@ -499,7 +499,7 @@
 
   async function removeSlot(id) {
     if (!confirm('Remove this time slot?')) return;
-    const res = await fetch('/.netlify/functions/delete-slot', {
+    const res = await fetch('/api/delete-slot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
