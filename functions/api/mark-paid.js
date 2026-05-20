@@ -1,103 +1,146 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+// Zero-dependency PDF invoice generator (Cloudflare Workers compatible).
 
-const GOLD = rgb(0.788, 0.659, 0.298);
-const GOLD_DIM = rgb(0.478, 0.396, 0.188);
-const BG = rgb(0.039, 0.039, 0.039);
-const SURFACE = rgb(0.067, 0.067, 0.067);
-const TEXT = rgb(0.941, 0.910, 0.847);
-const MUTED = rgb(0.541, 0.478, 0.376);
-
-async function generateInvoicePdf(b) {
-  const pdf = await PDFDocument.create();
-  const page = pdf.addPage([595, 842]);
-  const { width, height } = page.getSize();
-
-  const serif = await pdf.embedFont(StandardFonts.TimesRoman);
-  const serifBold = await pdf.embedFont(StandardFonts.TimesRomanBold);
-  const serifItalic = await pdf.embedFont(StandardFonts.TimesRomanItalic);
-  const sans = await pdf.embedFont(StandardFonts.HelveticaBold);
-
-  page.drawRectangle({ x: 0, y: 0, width, height, color: BG });
-  page.drawRectangle({ x: 40, y: height - 36, width: width - 80, height: 1.6, color: GOLD });
-
-  const drawCorner = (cx, cy, dx, dy) => {
-    page.drawRectangle({ x: cx, y: cy, width: 14 * dx, height: 1.4, color: GOLD });
-    page.drawRectangle({ x: cx, y: cy, width: 1.4, height: 14 * dy, color: GOLD });
+function toWinAnsi(code) {
+  if (code >= 0x20 && code <= 0x7e) return code;
+  if (code >= 0xa0 && code <= 0xff) return code;
+  const special = {
+    0x2018: 0x91, 0x2019: 0x92, 0x201c: 0x93, 0x201d: 0x94,
+    0x2013: 0x96, 0x2014: 0x97, 0x2022: 0x95, 0x2026: 0x85,
+    0x20ac: 0x80, 0x2122: 0x99
   };
-  drawCorner(40, height - 60, 1, -1);
-  drawCorner(width - 40 - 14, height - 60, -1, -1);
-  drawCorner(40, 60 + 14, 1, -1);
-  drawCorner(width - 40 - 14, 60 + 14, -1, -1);
-
-  page.drawText('BOOK TED', { x: 50, y: height - 100, font: sans, size: 28, color: GOLD, characterSpacing: 6 });
-  page.drawText('A private appointment service', { x: 50, y: height - 122, font: serifItalic, size: 11, color: GOLD_DIM });
-
-  page.drawText('INVOICE', { x: width - 160, y: height - 100, font: sans, size: 16, color: GOLD, characterSpacing: 4 });
-  const invoiceNo = (b.bookingId || '00000000').slice(0, 8).toUpperCase();
-  page.drawText(`No. ${invoiceNo}`, { x: width - 160, y: height - 118, font: serif, size: 10, color: MUTED });
-  page.drawText(b.issuedAt, { x: width - 160, y: height - 132, font: serif, size: 10, color: MUTED });
-
-  page.drawRectangle({ x: 50, y: height - 158, width: width - 100, height: 0.5, color: GOLD_DIM });
-
-  const colY = height - 188;
-  page.drawText('BILLED TO', { x: 50, y: colY, font: sans, size: 9, color: GOLD, characterSpacing: 3 });
-  page.drawText(`${b.firstName} ${b.lastName}`, { x: 50, y: colY - 22, font: serif, size: 13, color: TEXT });
-  page.drawText(b.email, { x: 50, y: colY - 40, font: serif, size: 10.5, color: MUTED });
-  page.drawText(b.phone || '', { x: 50, y: colY - 56, font: serif, size: 10.5, color: MUTED });
-
-  page.drawText('APPOINTMENT', { x: 320, y: colY, font: sans, size: 9, color: GOLD, characterSpacing: 3 });
-  page.drawText(b.slotTime, { x: 320, y: colY - 22, font: serif, size: 13, color: TEXT });
-  page.drawText(b.location, { x: 320, y: colY - 40, font: serif, size: 10.5, color: MUTED });
-
-  let y = height - 290;
-  page.drawRectangle({ x: 50, y, width: width - 100, height: 0.5, color: GOLD_DIM });
-
-  y -= 24;
-  page.drawText('DESCRIPTION', { x: 50, y, font: sans, size: 9, color: GOLD, characterSpacing: 3 });
-  page.drawText('AMOUNT', { x: width - 110, y, font: sans, size: 9, color: GOLD, characterSpacing: 3 });
-
-  y -= 12;
-  page.drawRectangle({ x: 50, y, width: width - 100, height: 0.3, color: GOLD_DIM });
-
-  y -= 28;
-  page.drawText('Non-refundable booking fee', { x: 50, y, font: serif, size: 12, color: TEXT });
-  page.drawText('£2.50', { x: width - 110, y, font: serif, size: 12, color: TEXT });
-
-  y -= 26;
-  page.drawText('Refundable deposit', { x: 50, y, font: serif, size: 12, color: TEXT });
-  page.drawText('£5.00', { x: width - 110, y, font: serif, size: 12, color: TEXT });
-  page.drawText('(returned in full upon Ted’s arrival)', { x: 50, y: y - 13, font: serifItalic, size: 9.5, color: MUTED });
-
-  y -= 38;
-  page.drawRectangle({ x: 50, y, width: width - 100, height: 0.5, color: GOLD_DIM });
-
-  y -= 28;
-  page.drawText('TOTAL PAID', { x: 50, y, font: sans, size: 11, color: GOLD, characterSpacing: 3 });
-  page.drawText('£7.50', { x: width - 110, y, font: serifBold, size: 15, color: GOLD });
-
-  y -= 56;
-  page.drawRectangle({ x: 50, y: y - 6, width: 120, height: 40, borderColor: GOLD, borderWidth: 1.5, color: SURFACE });
-  page.drawText('PAID', { x: 87, y: y + 8, font: sans, size: 18, color: GOLD, characterSpacing: 4 });
-  page.drawText(`Received ${b.issuedAt}`, { x: 180, y: y + 12, font: serifItalic, size: 10, color: MUTED });
-
-  page.drawText('Thank you for your booking.', { x: 50, y: 130, font: serifItalic, size: 11, color: TEXT });
-  page.drawText('Your £5.00 deposit is fully refundable and will be returned to you when Ted arrives at', { x: 50, y: 113, font: serif, size: 10, color: MUTED });
-  page.drawText('your appointment. The £2.50 booking fee is non-refundable.', { x: 50, y: 100, font: serif, size: 10, color: MUTED });
-
-  page.drawRectangle({ x: 50, y: 70, width: width - 100, height: 0.8, color: GOLD_DIM });
-  page.drawRectangle({ x: width / 2 - 3, y: 75, width: 6, height: 6, color: GOLD });
-
-  return await pdf.save();
+  return special[code] ?? null;
 }
 
-// Workers-compatible base64 encode of a Uint8Array (no Node Buffer)
-function bytesToBase64(bytes) {
-  let binary = '';
-  const chunk = 0x8000;
-  for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+function esc(s) {
+  s = String(s == null ? '' : s);
+  let out = '';
+  for (const ch of s) {
+    const code = ch.codePointAt(0);
+    if (ch === '(' || ch === ')' || ch === '\\') {
+      out += '\\' + ch;
+    } else if (code >= 0x20 && code <= 0x7e) {
+      out += ch;
+    } else {
+      const w = toWinAnsi(code);
+      if (w != null) out += '\\' + w.toString(8).padStart(3, '0');
+    }
   }
-  return btoa(binary);
+  return out;
+}
+
+function buildInvoicePdf(b) {
+  const GOLD = '0.788 0.659 0.298';
+  const GOLD_DIM = '0.478 0.396 0.188';
+  const BG = '0.039 0.039 0.039';
+  const SURFACE = '0.102 0.086 0.043';
+  const TEXT = '0.941 0.910 0.847';
+  const MUTED = '0.541 0.478 0.376';
+  const W = 595, H = 842;
+
+  let c = '';
+  const rect = (x, y, w, h, color) => { c += `${color} rg\n${x} ${y} ${w} ${h} re\nf\n`; };
+  const strokeRect = (x, y, w, h, color, lw) => {
+    c += `${color} RG\n${lw} w\n${x} ${y} ${w} ${h} re\nS\n`;
+  };
+  const text = (x, y, str, font, size, color, cs) => {
+    c += 'BT\n';
+    if (cs) c += `${cs} Tc\n`;
+    c += `/${font} ${size} Tf\n${color} rg\n1 0 0 1 ${x} ${y} Tm\n(${esc(str)}) Tj\nET\n`;
+    if (cs) c += '0 Tc\n';
+  };
+
+  rect(0, 0, W, H, BG);
+  rect(40, H - 36, W - 80, 1.6, GOLD);
+
+  const corner = (x, y, dx, dy) => {
+    rect(x, y, 14 * dx, 1.4, GOLD);
+    rect(x, y, 1.4, 14 * dy, GOLD);
+  };
+  corner(40, H - 60, 1, -1);
+  corner(W - 54, H - 60, -1, -1);
+  corner(40, 74, 1, -1);
+  corner(W - 54, 74, -1, -1);
+
+  text(50, H - 100, 'BOOK TED', 'F2', 28, GOLD, 6);
+  text(50, H - 122, 'A private appointment service', 'F3', 11, GOLD_DIM);
+  text(W - 160, H - 100, 'INVOICE', 'F2', 16, GOLD, 4);
+  const invoiceNo = (b.bookingId || '00000000').slice(0, 8).toUpperCase();
+  text(W - 160, H - 118, `No. ${invoiceNo}`, 'F1', 10, MUTED);
+  text(W - 160, H - 132, b.issuedAt, 'F1', 10, MUTED);
+
+  rect(50, H - 158, W - 100, 0.5, GOLD_DIM);
+
+  const colY = H - 188;
+  text(50, colY, 'BILLED TO', 'F2', 9, GOLD, 3);
+  text(50, colY - 22, `${b.firstName} ${b.lastName}`, 'F1', 13, TEXT);
+  text(50, colY - 40, b.email, 'F1', 10.5, MUTED);
+  text(50, colY - 56, b.phone || '', 'F1', 10.5, MUTED);
+
+  text(320, colY, 'APPOINTMENT', 'F2', 9, GOLD, 3);
+  text(320, colY - 22, b.slotTime, 'F1', 13, TEXT);
+  text(320, colY - 40, b.location, 'F1', 10.5, MUTED);
+
+  let y = H - 290;
+  rect(50, y, W - 100, 0.5, GOLD_DIM);
+  y -= 24;
+  text(50, y, 'DESCRIPTION', 'F2', 9, GOLD, 3);
+  text(W - 110, y, 'AMOUNT', 'F2', 9, GOLD, 3);
+  y -= 12;
+  rect(50, y, W - 100, 0.3, GOLD_DIM);
+
+  y -= 28;
+  text(50, y, 'Non-refundable booking fee', 'F1', 12, TEXT);
+  text(W - 110, y, '£2.50', 'F1', 12, TEXT);
+  y -= 26;
+  text(50, y, 'Refundable deposit', 'F1', 12, TEXT);
+  text(W - 110, y, '£5.00', 'F1', 12, TEXT);
+  text(50, y - 13, '(returned in full upon Ted’s arrival)', 'F3', 9.5, MUTED);
+
+  y -= 38;
+  rect(50, y, W - 100, 0.5, GOLD_DIM);
+  y -= 28;
+  text(50, y, 'TOTAL PAID', 'F2', 11, GOLD, 3);
+  text(W - 110, y, '£7.50', 'F4', 15, GOLD);
+
+  y -= 56;
+  rect(50, y - 6, 120, 40, SURFACE);
+  strokeRect(50, y - 6, 120, 40, GOLD, 1.5);
+  text(87, y + 8, 'PAID', 'F2', 18, GOLD, 4);
+  text(180, y + 12, `Received ${b.issuedAt}`, 'F3', 10, MUTED);
+
+  text(50, 130, 'Thank you for your booking.', 'F3', 11, TEXT);
+  text(50, 113, 'Your £5.00 deposit is fully refundable and will be returned to you when Ted arrives at', 'F1', 10, MUTED);
+  text(50, 100, 'your appointment. The £2.50 booking fee is non-refundable.', 'F1', 10, MUTED);
+  rect(50, 70, W - 100, 0.8, GOLD_DIM);
+  rect(W / 2 - 3, 75, 6, 6, GOLD);
+
+  const objs = [
+    '<</Type/Catalog/Pages 2 0 R>>',
+    '<</Type/Pages/Kids[3 0 R]/Count 1>>',
+    `<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${W} ${H}]/Resources<</Font<</F1 5 0 R/F2 6 0 R/F3 7 0 R/F4 8 0 R>>>>/Contents 4 0 R>>`,
+    `<</Length ${c.length}>>\nstream\n${c}\nendstream`,
+    '<</Type/Font/Subtype/Type1/BaseFont/Times-Roman/Encoding/WinAnsiEncoding>>',
+    '<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>',
+    '<</Type/Font/Subtype/Type1/BaseFont/Times-Italic/Encoding/WinAnsiEncoding>>',
+    '<</Type/Font/Subtype/Type1/BaseFont/Times-Bold/Encoding/WinAnsiEncoding>>'
+  ];
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = [];
+  objs.forEach((o, i) => {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${o}\nendobj\n`;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  offsets.forEach(o => { pdf += `${String(o).padStart(10, '0')} 00000 n \n`; });
+  pdf += `trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`;
+  return pdf;
+}
+
+// The PDF string is pure ASCII, so btoa encodes it directly to base64.
+function pdfToBase64(pdfString) {
+  return btoa(pdfString);
 }
 
 function paymentReceivedHtml(b) {
@@ -149,7 +192,7 @@ export async function onRequestPost({ request, env }) {
     timeZone: 'Europe/London', day: '2-digit', month: 'long', year: 'numeric'
   });
 
-  const pdfBytes = await generateInvoicePdf({
+  const pdfString = buildInvoicePdf({
     bookingId: id,
     firstName: firstName || '',
     lastName: lastName || '',
@@ -159,8 +202,7 @@ export async function onRequestPost({ request, env }) {
     slotTime: slotTime || '',
     issuedAt
   });
-
-  const base64Pdf = bytesToBase64(pdfBytes);
+  const base64Pdf = pdfToBase64(pdfString);
 
   const sendRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
