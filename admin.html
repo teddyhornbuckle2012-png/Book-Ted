@@ -154,7 +154,10 @@
       <div class="dash-logo">BOOK TED</div>
       <div class="dash-sub">Admin Dashboard</div>
     </div>
-    <button class="btn-logout" onclick="logout()">Log Out</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-logout" onclick="sendTest()">Test</button>
+      <button class="btn-logout" onclick="logout()">Log Out</button>
+    </div>
   </div>
 
   <div class="dash-content">
@@ -229,6 +232,25 @@
     document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('passwordInput').value = '';
+  }
+
+  async function sendTest() {
+    const to = prompt('Send a test email to:', 'jadelousedixon2015@yahoo.com');
+    if (!to) return;
+    try {
+      const res = await fetch('/api/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to })
+      });
+      if (res.ok) {
+        alert('Test email sent to ' + to + '.\n\nCheck the inbox — and the spam folder.');
+      } else {
+        alert('Test email failed:\n\n' + await readError(res));
+      }
+    } catch (e) {
+      alert('Test email failed:\n\n' + (e && e.message ? e.message : e));
+    }
   }
 
   async function readError(res) {
