@@ -5,7 +5,7 @@ export async function onRequestPost({ request, env }) {
   try {
     if (!env.RESEND_API_KEY) return jsonErr('RESEND_API_KEY is not set on Cloudflare.', 500);
 
-    let to = 'jadelousedixon2015@yahoo.com';
+    let to = 'jadelouisedixon2015@yahoo.com';
     try {
       const body = await request.json();
       if (body && body.to) to = String(body.to).trim();
