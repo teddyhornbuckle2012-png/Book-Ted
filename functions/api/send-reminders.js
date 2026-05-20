@@ -47,9 +47,14 @@ function reminderHtml({ firstName, location, slotTime, daysUntil, mapsUrl }) {
 }
 
 export async function onRequest({ env }) {
+ try {
   const SUPABASE_URL = env.SUPABASE_URL;
   const SUPABASE_KEY = env.SUPABASE_SECRET_KEY;
   const RESEND_KEY = env.RESEND_API_KEY;
+
+  if (!SUPABASE_URL || !/^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL)) {
+    return new Response(JSON.stringify({ error: 'SUPABASE_URL missing or invalid' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
 
   const target1 = londonDate(1);
   const target3 = londonDate(3);
@@ -116,4 +121,7 @@ export async function onRequest({ env }) {
     status: 200,
     headers: { 'Content-Type': 'application/json' }
   });
+ } catch (e) {
+  return new Response(JSON.stringify({ error: 'Server error: ' + (e?.message || String(e)) }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+ }
 }

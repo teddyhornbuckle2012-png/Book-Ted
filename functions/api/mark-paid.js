@@ -161,77 +161,92 @@ function paymentReceivedHtml(b) {
   `;
 }
 
-export async function onRequestPost({ request, env }) {
-  const { id, firstName, lastName, email, phone, location, slotTime } = await request.json();
+const jsonErr = (msg, status = 500) =>
+  new Response(JSON.stringify({ error: msg }), { status, headers: { 'Content-Type': 'application/json' } });
 
-  const SUPABASE_URL = env.SUPABASE_URL;
-  const SUPABASE_KEY = env.SUPABASE_SECRET_KEY;
-  const RESEND_KEY = env.RESEND_API_KEY;
-
-  const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`
-    },
-    body: JSON.stringify({ paid: true })
-  });
-
-  if (!dbRes.ok) {
-    const body = await dbRes.text();
-    let parsed = null;
-    try { parsed = JSON.parse(body); } catch {}
-    return new Response(JSON.stringify({ error: parsed?.message || body || 'Database error' }), {
-      status: dbRes.status,
-      headers: { 'Content-Type': 'application/json' }
-    });
+function checkEnv(env) {
+  const u = env.SUPABASE_URL;
+  if (!u || !/^https:\/\/.+\.supabase\.co/.test(u)) {
+    return `SUPABASE_URL is missing or invalid on Cloudflare. It must be your Supabase project URL (e.g. https://xxxx.supabase.co), not a key. Seen: "${String(u).slice(0, 18)}…"`;
   }
-
-  const issuedAt = new Date().toLocaleDateString('en-GB', {
-    timeZone: 'Europe/London', day: '2-digit', month: 'long', year: 'numeric'
-  });
-
-  const pdfString = buildInvoicePdf({
-    bookingId: id,
-    firstName: firstName || '',
-    lastName: lastName || '',
-    email: email || '',
-    phone: phone || '',
-    location: location || '',
-    slotTime: slotTime || '',
-    issuedAt
-  });
-  const base64Pdf = pdfToBase64(pdfString);
-
-  const sendRes = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${RESEND_KEY}`
-    },
-    body: JSON.stringify({
-      from: 'Book Ted <bookings@bookted.uk>',
-      to: email,
-      subject: 'BOOK TED — Payment Received',
-      html: paymentReceivedHtml({ location, slotTime }),
-      attachments: [{
-        filename: `Book-Ted-Invoice-${(id || '').slice(0, 8)}.pdf`,
-        content: base64Pdf
-      }]
-    })
-  });
-
-  if (!sendRes.ok) {
-    const body = await sendRes.text();
-    return new Response(JSON.stringify({ error: 'email send failed', detail: body }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
+  if (!env.SUPABASE_SECRET_KEY) return 'SUPABASE_SECRET_KEY is not set on Cloudflare.';
+  if (!env.RESEND_API_KEY) return 'RESEND_API_KEY is not set on Cloudflare.';
+  return null;
 }
+
+export async function onRequestPost({ request, env }) {
+  try {
+    const envErr = checkEnv(env);
+    if (envErr) return jsonErr(envErr, 500);
+
+    const { id, firstName, lastName, email, phone, location, slotTime } = await request.json();
+
+    const SUPABASE_URL = env.SUPABASE_URL;
+    const SUPABASE_KEY = env.SUPABASE_SECRET_KEY;
+    const RESEND_KEY = env.RESEND_API_KEY;
+
+    const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`
+      },
+      body: JSON.stringify({ paid: true })
+    });
+
+    if (!dbRes.ok) {
+      const body = await dbRes.text();
+      let parsed = null;
+      try { parsed = JSON.parse(body); } catch {}
+      return jsonErr(parsed?.message || body || 'Database error', dbRes.status);
+    }
+
+    const issuedAt = new Date().toLocaleDateString('en-GB', {
+      timeZone: 'Europe/London', day: '2-digit', month: 'long', year: 'numeric'
+    });
+
+    const pdfString = buildInvoicePdf({
+      bookingId: id,
+      firstName: firstName || '',
+      lastName: lastName || '',
+      email: email || '',
+      phone: phone || '',
+      location: location || '',
+      slotTime: slotTime || '',
+      issuedAt
+    });
+    const base64Pdf = pdfToBase64(pdfString);
+
+    const sendRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_KEY}`
+      },
+      body: JSON.stringify({
+        from: 'Book Ted <bookings@bookted.uk>',
+        to: email,
+        subject: 'BOOK TED — Payment Received',
+        html: paymentReceivedHtml({ location, slotTime }),
+        attachments: [{
+          filename: `Book-Ted-Invoice-${(id || '').slice(0, 8)}.pdf`,
+          content: base64Pdf
+        }]
+      })
+    });
+
+    if (!sendRes.ok) {
+      const body = await sendRes.text();
+      return jsonErr('email send failed: ' + body, 500);
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {
+    return jsonErr('Server error: ' + (e?.message || String(e)), 500);
+  }
+}
+
