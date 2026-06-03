@@ -138,11 +138,14 @@
     <div class="corner corner-br"></div>
     <div class="login-logo">BOOK TED</div>
     <div class="login-sub">Admin Access</div>
-    <div class="login-field">
-      <label>Password</label>
-      <input type="password" id="passwordInput" placeholder="Enter your password" onkeydown="if(event.key==='Enter') login()" />
-    </div>
-    <button class="btn-login" onclick="login()">Enter Dashboard</button>
+    <form onsubmit="event.preventDefault(); login();" autocomplete="on">
+      <input type="text" name="username" value="ted" autocomplete="username" readonly style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;" tabindex="-1" aria-hidden="true" />
+      <div class="login-field">
+        <label>Password</label>
+        <input type="password" id="passwordInput" name="password" autocomplete="current-password" placeholder="Enter your password" />
+      </div>
+      <button class="btn-login" type="submit">Enter Dashboard</button>
+    </form>
     <div class="login-error" id="loginError">Incorrect password. Please try again.</div>
   </div>
 </div>
