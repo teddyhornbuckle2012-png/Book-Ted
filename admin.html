@@ -77,6 +77,8 @@
   .btn-cancel:hover { border-color: var(--red); color: var(--red); }
   .btn-paid { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold); color: var(--gold); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
   .btn-paid:hover { background: #2a2010; box-shadow: 0 0 12px rgba(201,168,76,0.18); }
+  .btn-bin { background: none; border: 1px solid #2a2318; color: var(--text-muted); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 8px 12px; cursor: pointer; transition: all 0.2s; margin-top: 4px; }
+  .btn-bin:hover { border-color: var(--red); color: var(--red); }
   .booking-actions { display: flex; flex-direction: column; gap: 10px; min-width: 130px; }
   .btn-confirm { background: linear-gradient(135deg, #0a1a0f, #0f2a18); border: 1px solid var(--green); color: var(--green); font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; padding: 10px 16px; cursor: pointer; transition: all 0.2s; }
   .btn-confirm:hover { background: #0f2a18; box-shadow: 0 0 12px rgba(76,175,125,0.15); }
@@ -324,6 +326,7 @@
               ${!b.paid ? `<button class="btn-paid" data-action="mark-paid">£ MARK AS PAID</button>` : ''}
               <button class="btn-cancel" data-action="cancel">CANCEL</button>
             ` : `<div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.2em;color:var(--text-muted);">${escapeHtml(statusUpper)}</div>`}
+            <button class="btn-bin" data-action="bin" title="Delete this booking">🗑 BIN</button>
           </div>
         </div>
       `;
@@ -340,6 +343,13 @@
             btn.disabled = true;
             btn.textContent = 'PROCESSING…';
             markAsPaid(b, btn);
+            return;
+          }
+          if (btn.dataset.action === 'bin') {
+            if (!confirm(`Permanently delete the booking from ${b.first_name || ''} ${b.last_name || ''}? This cannot be undone.`)) return;
+            btn.disabled = true;
+            btn.textContent = 'DELETING…';
+            binBooking(b, btn);
             return;
           }
           let newStatus;
@@ -370,6 +380,26 @@
       if (status === 'declined') loadSlots();
     } else {
       alert('Something went wrong:\n\n' + await readError(res));
+    }
+  }
+
+  async function binBooking(b, btn) {
+    try {
+      const res = await fetch('/api/delete-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: b.id })
+      });
+      if (res.ok) {
+        allBookings = allBookings.filter(x => x.id !== b.id);
+        renderBookings();
+      } else {
+        alert('Could not delete booking:\n\n' + await readError(res));
+        if (btn) { btn.disabled = false; btn.textContent = '🗑 BIN'; }
+      }
+    } catch (e) {
+      alert('Could not delete booking:\n\n' + (e && e.message ? e.message : e));
+      if (btn) { btn.disabled = false; btn.textContent = '🗑 BIN'; }
     }
   }
 
