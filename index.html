@@ -301,13 +301,14 @@
   let helpSending = false;
   let helpTooltipTimers = [];
 
-  // Rough simulation of a person reading + typing a reply.
-  // ~10 chars/sec typing, plus a small read-and-think pause; clamped so the
-  // dots are never instant and never absurdly long.
+  // Average adult typing speed is ~40 WPM (around 200 characters per minute,
+  // i.e. roughly 300 ms per character) plus a brief moment to gather thoughts.
+  // Clamped to 2.5s–90s so very short replies still feel deliberate and very
+  // long ones don't keep someone waiting forever.
   function calculateTypingDelay(text) {
     const len = (text || '').length;
-    const ms = 1500 + len * 100;
-    return Math.min(18000, Math.max(4000, ms));
+    const ms = 800 + len * 300;
+    return Math.min(90000, Math.max(2500, ms));
   }
 
   function dismissHelpTooltip() {
@@ -491,40 +492,48 @@
     sendBtn.disabled = true;
     appendHelpMessage('user', text);
     helpHistory.push({ role: 'user', content: text });
-    const typing = appendTypingIndicator();
-    const started = Date.now();
-    let assistantText = null;
-    let errorText = null;
-    try {
-      const res = await fetch('/api/concierge', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: helpHistory })
-      });
-      if (!res.ok) {
-        let msg = 'A momentary disturbance, my apologies. Please try again.';
-        try { const j = await res.json(); if (j && j.error) msg = j.error; } catch {}
-        errorText = msg;
-      } else {
+
+    // Kick off the network request immediately so it overlaps with the
+    // Sent -> Read wait; we'll consume the result once typing finishes.
+    const fetchPromise = (async () => {
+      try {
+        const res = await fetch('/api/concierge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: helpHistory })
+        });
+        if (!res.ok) {
+          let msg = 'A momentary disturbance, my apologies. Please try again.';
+          try { const j = await res.json(); if (j && j.error) msg = j.error; } catch {}
+          return { error: msg };
+        }
         const data = await res.json();
-        assistantText = (data.reply || '').trim() || '(silence)';
+        return { text: (data.reply || '').trim() || '(silence)' };
+      } catch (e) {
+        return { error: 'A momentary disturbance, my apologies. Please try again.' };
       }
-    } catch (e) {
-      errorText = 'A momentary disturbance, my apologies. Please try again.';
-    }
-    // Wait long enough for the reply to feel hand-typed by a real concierge:
-    // delay scales with the length of the message the user is about to see.
-    const targetDelay = calculateTypingDelay(assistantText !== null ? assistantText : errorText);
-    const elapsed = Date.now() - started;
+    })();
+
+    // Hold the typing dots back until the user's "Sent" tick flips to "Read"
+    // — keeps the illusion that the concierge only starts typing once they've
+    // actually seen the message.
+    await new Promise(r => setTimeout(r, 10000));
+
+    const typing = appendTypingIndicator();
+    const typingStarted = Date.now();
+    const result = await fetchPromise;
+    const shownText = result.text !== undefined ? result.text : result.error;
+    const targetDelay = calculateTypingDelay(shownText);
+    const elapsed = Date.now() - typingStarted;
     if (elapsed < targetDelay) {
       await new Promise(r => setTimeout(r, targetDelay - elapsed));
     }
     typing.remove();
-    if (assistantText !== null) {
-      appendHelpMessage('assistant', assistantText);
-      helpHistory.push({ role: 'assistant', content: assistantText });
+    if (result.text !== undefined) {
+      appendHelpMessage('assistant', result.text);
+      helpHistory.push({ role: 'assistant', content: result.text });
     } else {
-      appendHelpMessage('assistant', errorText);
+      appendHelpMessage('assistant', result.error);
     }
     helpSending = false;
     input.disabled = false;
