@@ -85,10 +85,21 @@
   @media (max-width: 500px) { .form-card { padding: 32px 22px; } .field-row { grid-template-columns: 1fr; } .slots-grid { grid-template-columns: repeat(2, 1fr); } }
 
   /* ── Concierge help button + chat panel ── */
-  .help-btn { position: fixed; bottom: 22px; right: 22px; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light), var(--gold)); color: #0a0a0a; border: 1px solid var(--gold); cursor: pointer; z-index: 100; box-shadow: 0 4px 18px rgba(201,168,76,0.35), inset 0 0 0 1px rgba(0,0,0,0.18); transition: transform 0.18s, box-shadow 0.18s; padding: 0; display: flex; align-items: center; justify-content: center; }
+  .help-btn { position: fixed; bottom: 22px; right: 22px; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light), var(--gold)); color: #0a0a0a; border: 1px solid var(--gold); cursor: pointer; z-index: 100; box-shadow: 0 4px 18px rgba(201,168,76,0.35), inset 0 0 0 1px rgba(0,0,0,0.18); transition: transform 0.18s, box-shadow 0.18s, opacity 0.3s; padding: 0; display: flex; align-items: center; justify-content: center; touch-action: none; -webkit-user-select: none; user-select: none; }
   .help-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.5); }
   .help-btn:active { transform: translateY(0); }
-  .help-btn svg { width: 24px; height: 24px; display: block; }
+  .help-btn svg { width: 24px; height: 24px; display: block; pointer-events: none; }
+  .help-btn.dragging { transition: none; cursor: grabbing; box-shadow: 0 10px 30px rgba(201,168,76,0.55); }
+  .help-btn.dropped { transition: opacity 0.32s ease, transform 0.32s ease; opacity: 0; transform: scale(0.5); pointer-events: none; }
+  .help-btn.tap-anim { animation: helpTapScale 0.42s ease; }
+  .help-btn.tap-anim::before { content: ''; position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px; border-radius: 50%; border: 2px solid var(--gold); opacity: 0.85; animation: helpTapRipple 0.55s ease-out forwards; pointer-events: none; }
+  @keyframes helpTapScale { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.12); } }
+  @keyframes helpTapRipple { from { top: -3px; left: -3px; right: -3px; bottom: -3px; opacity: 0.85; } to { top: -18px; left: -18px; right: -18px; bottom: -18px; opacity: 0; border-width: 1px; } }
+  .help-bin { position: fixed; bottom: 28px; left: 50%; width: 64px; height: 64px; border-radius: 50%; background: rgba(20,15,8,0.92); border: 1px dashed rgba(201,76,76,0.55); display: flex; align-items: center; justify-content: center; z-index: 99; opacity: 0; transform: translateX(-50%) translateY(18px); pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s, border-color 0.2s; }
+  .help-bin.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .help-bin.hover { background: rgba(80,20,20,0.95); border-color: #c94c4c; border-style: solid; transform: translateX(-50%) translateY(0) scale(1.12); }
+  .help-bin svg { width: 26px; height: 26px; stroke: rgba(201,76,76,0.7); fill: none; stroke-width: 2; stroke-linecap: round; transition: stroke 0.2s; }
+  .help-bin.hover svg { stroke: #c94c4c; }
   .help-tooltip { position: fixed; bottom: 86px; right: 22px; max-width: 200px; background: var(--surface); border: 1px solid var(--gold-dim); color: var(--gold-light); font-family: 'Cormorant Garamond', serif; font-size: 15px; font-style: italic; padding: 9px 16px; z-index: 99; box-shadow: 0 4px 16px rgba(0,0,0,0.55); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 0.35s ease, transform 0.35s ease; }
   .help-tooltip.show { opacity: 1; transform: translateY(0); }
   .help-tooltip::after { content: ''; position: absolute; right: 22px; bottom: -7px; width: 12px; height: 12px; background: var(--surface); border-right: 1px solid var(--gold-dim); border-bottom: 1px solid var(--gold-dim); transform: rotate(45deg); }
@@ -99,7 +110,7 @@
   .help-title { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 0.3em; color: var(--gold); text-transform: uppercase; }
   .help-close { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 0 4px; line-height: 1; transition: color 0.2s; }
   .help-close:hover { color: var(--gold); }
-  .help-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .help-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; -webkit-overflow-scrolling: touch; }
   .help-msg { max-width: 85%; padding: 9px 13px; font-size: 14px; line-height: 1.5; border: 1px solid #2a2318; white-space: pre-wrap; word-wrap: break-word; }
   .help-msg.assistant { align-self: flex-start; background: var(--surface2); color: var(--text); border-left: 2px solid var(--gold-dim); }
   .help-msg.user { align-self: flex-end; background: #1a1508; color: var(--gold-light); border-right: 2px solid var(--gold); }
@@ -109,13 +120,22 @@
   .help-typing-dots span:nth-child(1) { animation-delay: -0.30s; }
   .help-typing-dots span:nth-child(2) { animation-delay: -0.15s; }
   @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0.55); opacity: 0.35; } 40% { transform: scale(1); opacity: 1; } }
-  .help-input-row { border-top: 1px solid #2a2318; padding: 11px; display: flex; gap: 8px; }
-  .help-input-row input { flex: 1; background: var(--surface2); border: 1px solid #2a2318; border-bottom: 1px solid var(--gold-dim); color: var(--text); font-family: 'Cormorant Garamond', serif; font-size: 15px; padding: 9px 12px; outline: none; border-radius: 0; }
+  .help-input-row { border-top: 1px solid #2a2318; padding: 11px; display: flex; gap: 8px; flex-shrink: 0; }
+  .help-input-row input { flex: 1; min-width: 0; background: var(--surface2); border: 1px solid #2a2318; border-bottom: 1px solid var(--gold-dim); color: var(--text); font-family: 'Cormorant Garamond', serif; font-size: 15px; padding: 9px 12px; outline: none; border-radius: 0; }
   .help-input-row input:focus { border-color: var(--gold); }
-  .help-input-row button { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold-dim); color: var(--gold); font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.25em; padding: 0 16px; cursor: pointer; }
+  .help-input-row button { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold-dim); color: var(--gold); font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.25em; padding: 0 16px; cursor: pointer; flex-shrink: 0; }
   .help-input-row button:hover { border-color: var(--gold); color: var(--gold-light); }
   .help-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
-  @media (max-width: 500px) { .help-panel { right: 10px; left: 10px; width: auto; bottom: 80px; } .help-btn { bottom: 16px; right: 16px; width: 48px; height: 48px; } .help-btn svg { width: 21px; height: 21px; } .help-tooltip { bottom: 76px; right: 16px; } }
+  body.help-open-mobile { overflow: hidden; }
+  @media (max-width: 600px) {
+    .help-panel { top: 0; right: 0; bottom: 0; left: 0; width: 100%; max-width: none; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; border: none; border-top: 1px solid var(--gold); animation: helpPanelSlide 0.3s ease both; }
+    body.help-open-mobile .help-btn, body.help-open-mobile .help-tooltip, body.help-open-mobile .help-bin { display: none; }
+    .help-btn { bottom: 16px; right: 16px; width: 48px; height: 48px; }
+    .help-btn svg { width: 21px; height: 21px; }
+    .help-tooltip { bottom: 76px; right: 16px; }
+    .help-bin { bottom: 22px; width: 60px; height: 60px; }
+  }
+  @keyframes helpPanelSlide { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
 <body>
@@ -270,18 +290,126 @@
     helpTooltipTimers.forEach(clearTimeout);
     helpTooltipTimers = [];
   }
+  function getTimeBasedGreeting() {
+    const hour = new Date().getHours();
+    let salutation;
+    if (hour < 12) salutation = 'Good morning';
+    else if (hour < 18) salutation = 'Good afternoon';
+    else salutation = 'Good evening';
+    return salutation + '. How may I assist?';
+  }
+  function updateHelpPanelHeight() {
+    const panel = document.getElementById('helpPanel');
+    if (!panel || !panel.classList.contains('open')) return;
+    if (window.innerWidth > 600) { panel.style.height = ''; return; }
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    panel.style.height = h + 'px';
+  }
   function openHelp() {
     dismissHelpTooltip();
-    document.getElementById('helpPanel').classList.add('open');
+    const panel = document.getElementById('helpPanel');
+    panel.classList.add('open');
+    if (window.innerWidth <= 600) document.body.classList.add('help-open-mobile');
+    updateHelpPanelHeight();
     if (!helpStarted) {
-      appendHelpMessage('assistant', 'Welcome to Book Ted. I am your humble concierge — at your service. How may I assist?');
+      appendHelpMessage('assistant', getTimeBasedGreeting());
       helpStarted = true;
     }
     setTimeout(() => document.getElementById('helpInput').focus(), 60);
   }
   function closeHelp() {
-    document.getElementById('helpPanel').classList.remove('open');
+    const panel = document.getElementById('helpPanel');
+    panel.classList.remove('open');
+    panel.style.height = '';
+    document.body.classList.remove('help-open-mobile');
+    document.getElementById('helpInput').blur();
   }
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', updateHelpPanelHeight);
+  window.addEventListener('resize', updateHelpPanelHeight);
+
+  /* ── Drag + click animation on the help button ── */
+  let helpDragState = null;
+  function setupHelpDrag() {
+    const btn = document.getElementById('helpBtn');
+    if (!btn) return;
+    const start = (e) => {
+      const p = e.touches ? e.touches[0] : e;
+      const rect = btn.getBoundingClientRect();
+      helpDragState = {
+        startX: p.clientX, startY: p.clientY,
+        offsetX: p.clientX - rect.left, offsetY: p.clientY - rect.top,
+        moved: false, startTime: Date.now()
+      };
+      btn.classList.add('dragging');
+      document.getElementById('helpBin').classList.add('show');
+      dismissHelpTooltip();
+      if (e.cancelable) e.preventDefault();
+    };
+    const move = (e) => {
+      if (!helpDragState) return;
+      const p = e.touches ? e.touches[0] : e;
+      const dx = p.clientX - helpDragState.startX;
+      const dy = p.clientY - helpDragState.startY;
+      if (Math.abs(dx) > 4 || Math.abs(dy) > 4) helpDragState.moved = true;
+      const bw = btn.offsetWidth, bh = btn.offsetHeight;
+      let nx = p.clientX - helpDragState.offsetX;
+      let ny = p.clientY - helpDragState.offsetY;
+      nx = Math.max(4, Math.min(window.innerWidth - bw - 4, nx));
+      ny = Math.max(4, Math.min(window.innerHeight - bh - 4, ny));
+      btn.style.left = nx + 'px';
+      btn.style.top = ny + 'px';
+      btn.style.right = 'auto';
+      btn.style.bottom = 'auto';
+      const bin = document.getElementById('helpBin');
+      const binR = bin.getBoundingClientRect();
+      const cx = nx + bw / 2, cy = ny + bh / 2;
+      const over = cx >= binR.left && cx <= binR.right && cy >= binR.top && cy <= binR.bottom;
+      bin.classList.toggle('hover', over);
+      if (e.cancelable) e.preventDefault();
+    };
+    const end = (e) => {
+      if (!helpDragState) return;
+      const bin = document.getElementById('helpBin');
+      const wasTap = !helpDragState.moved && (Date.now() - helpDragState.startTime) < 350;
+      const droppedOnBin = bin.classList.contains('hover');
+      btn.classList.remove('dragging');
+      bin.classList.remove('show', 'hover');
+      helpDragState = null;
+      if (droppedOnBin) {
+        btn.classList.add('dropped');
+        setTimeout(() => { btn.style.display = 'none'; }, 350);
+        return;
+      }
+      if (wasTap) {
+        btn.classList.add('tap-anim');
+        setTimeout(() => btn.classList.remove('tap-anim'), 500);
+        openHelp();
+      }
+    };
+    btn.addEventListener('touchstart', start, { passive: false });
+    btn.addEventListener('touchmove', move, { passive: false });
+    btn.addEventListener('touchend', end);
+    btn.addEventListener('touchcancel', end);
+    btn.addEventListener('mousedown', (e) => {
+      start(e);
+      document.addEventListener('mousemove', move);
+      const up = (ev) => {
+        end(ev);
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+      };
+      document.addEventListener('mouseup', up);
+    });
+    btn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        btn.classList.add('tap-anim');
+        setTimeout(() => btn.classList.remove('tap-anim'), 500);
+        openHelp();
+      }
+    });
+  }
+  setupHelpDrag();
   function appendHelpMessage(role, text) {
     const list = document.getElementById('helpMessages');
     const div = document.createElement('div');
@@ -401,11 +529,17 @@
 </script>
 
 <div class="help-tooltip" id="helpTooltip" aria-hidden="true">Happy to help!</div>
-<button class="help-btn" onclick="openHelp()" title="Concierge" aria-label="Open the concierge">
+<button class="help-btn" id="helpBtn" title="Concierge — drag to move, drop on the bin to hide" aria-label="Open the concierge">
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path fill="#0a0a0a" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM7 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>
   </svg>
 </button>
+<div class="help-bin" id="helpBin" aria-hidden="true">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <line x1="7" y1="7" x2="17" y2="17"/>
+    <line x1="7" y1="17" x2="17" y2="7"/>
+  </svg>
+</div>
 <div class="help-panel" id="helpPanel" role="dialog" aria-label="Book Ted concierge">
   <div class="help-header">
     <div class="help-title">Concierge</div>
