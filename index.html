@@ -85,9 +85,13 @@
   @media (max-width: 500px) { .form-card { padding: 32px 22px; } .field-row { grid-template-columns: 1fr; } .slots-grid { grid-template-columns: repeat(2, 1fr); } }
 
   /* ── Concierge help button + chat panel ── */
-  .help-btn { position: fixed; bottom: 22px; right: 22px; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light), var(--gold)); color: #0a0a0a; font-family: 'Cinzel', serif; font-size: 24px; font-weight: 900; border: 1px solid var(--gold); cursor: pointer; z-index: 100; box-shadow: 0 4px 18px rgba(201,168,76,0.35), inset 0 0 0 1px rgba(0,0,0,0.18); transition: transform 0.18s, box-shadow 0.18s; padding: 0; line-height: 1; }
+  .help-btn { position: fixed; bottom: 22px; right: 22px; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, var(--gold-dim), var(--gold), var(--gold-light), var(--gold)); color: #0a0a0a; border: 1px solid var(--gold); cursor: pointer; z-index: 100; box-shadow: 0 4px 18px rgba(201,168,76,0.35), inset 0 0 0 1px rgba(0,0,0,0.18); transition: transform 0.18s, box-shadow 0.18s; padding: 0; display: flex; align-items: center; justify-content: center; }
   .help-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.5); }
   .help-btn:active { transform: translateY(0); }
+  .help-btn svg { width: 24px; height: 24px; display: block; }
+  .help-tooltip { position: fixed; bottom: 86px; right: 22px; max-width: 200px; background: var(--surface); border: 1px solid var(--gold-dim); color: var(--gold-light); font-family: 'Cormorant Garamond', serif; font-size: 15px; font-style: italic; padding: 9px 16px; z-index: 99; box-shadow: 0 4px 16px rgba(0,0,0,0.55); opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 0.35s ease, transform 0.35s ease; }
+  .help-tooltip.show { opacity: 1; transform: translateY(0); }
+  .help-tooltip::after { content: ''; position: absolute; right: 22px; bottom: -7px; width: 12px; height: 12px; background: var(--surface); border-right: 1px solid var(--gold-dim); border-bottom: 1px solid var(--gold-dim); transform: rotate(45deg); }
   .help-panel { position: fixed; bottom: 88px; right: 22px; width: 340px; max-width: calc(100vw - 32px); height: 480px; max-height: calc(100vh - 130px); background: var(--surface); border: 1px solid var(--gold-dim); display: none; flex-direction: column; z-index: 100; box-shadow: 0 12px 40px rgba(0,0,0,0.6); animation: fadeUp 0.25s ease both; }
   .help-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
   .help-panel.open { display: flex; }
@@ -99,14 +103,19 @@
   .help-msg { max-width: 85%; padding: 9px 13px; font-size: 14px; line-height: 1.5; border: 1px solid #2a2318; white-space: pre-wrap; word-wrap: break-word; }
   .help-msg.assistant { align-self: flex-start; background: var(--surface2); color: var(--text); border-left: 2px solid var(--gold-dim); }
   .help-msg.user { align-self: flex-end; background: #1a1508; color: var(--gold-light); border-right: 2px solid var(--gold); }
-  .help-msg.typing { color: var(--text-muted); font-style: italic; }
+  .help-msg.typing { padding: 13px 16px; }
+  .help-typing-dots { display: inline-flex; align-items: center; gap: 5px; }
+  .help-typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--gold-dim); animation: typingBounce 1.3s infinite ease-in-out both; }
+  .help-typing-dots span:nth-child(1) { animation-delay: -0.30s; }
+  .help-typing-dots span:nth-child(2) { animation-delay: -0.15s; }
+  @keyframes typingBounce { 0%, 80%, 100% { transform: scale(0.55); opacity: 0.35; } 40% { transform: scale(1); opacity: 1; } }
   .help-input-row { border-top: 1px solid #2a2318; padding: 11px; display: flex; gap: 8px; }
   .help-input-row input { flex: 1; background: var(--surface2); border: 1px solid #2a2318; border-bottom: 1px solid var(--gold-dim); color: var(--text); font-family: 'Cormorant Garamond', serif; font-size: 15px; padding: 9px 12px; outline: none; border-radius: 0; }
   .help-input-row input:focus { border-color: var(--gold); }
   .help-input-row button { background: linear-gradient(135deg, #1a1408, #2a2010); border: 1px solid var(--gold-dim); color: var(--gold); font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.25em; padding: 0 16px; cursor: pointer; }
   .help-input-row button:hover { border-color: var(--gold); color: var(--gold-light); }
   .help-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
-  @media (max-width: 500px) { .help-panel { right: 10px; left: 10px; width: auto; bottom: 80px; } .help-btn { bottom: 16px; right: 16px; width: 48px; height: 48px; font-size: 21px; } }
+  @media (max-width: 500px) { .help-panel { right: 10px; left: 10px; width: auto; bottom: 80px; } .help-btn { bottom: 16px; right: 16px; width: 48px; height: 48px; } .help-btn svg { width: 21px; height: 21px; } .help-tooltip { bottom: 76px; right: 16px; } }
 </style>
 </head>
 <body>
@@ -252,8 +261,17 @@
   let helpHistory = [];
   let helpStarted = false;
   let helpSending = false;
+  let helpTooltipTimers = [];
+  const HELP_MIN_RESPONSE_MS = 10000; // deliberate ~10s pause so it feels considered, not robotic
 
+  function dismissHelpTooltip() {
+    const t = document.getElementById('helpTooltip');
+    if (t) t.classList.remove('show');
+    helpTooltipTimers.forEach(clearTimeout);
+    helpTooltipTimers = [];
+  }
   function openHelp() {
+    dismissHelpTooltip();
     document.getElementById('helpPanel').classList.add('open');
     if (!helpStarted) {
       appendHelpMessage('assistant', 'Welcome to Book Ted. I am your humble concierge — at your service. How may I assist?');
@@ -264,11 +282,23 @@
   function closeHelp() {
     document.getElementById('helpPanel').classList.remove('open');
   }
-  function appendHelpMessage(role, text, typing) {
+  function appendHelpMessage(role, text) {
     const list = document.getElementById('helpMessages');
     const div = document.createElement('div');
-    div.className = 'help-msg ' + role + (typing ? ' typing' : '');
+    div.className = 'help-msg ' + role;
     div.textContent = text;
+    list.appendChild(div);
+    list.scrollTop = list.scrollHeight;
+    return div;
+  }
+  function appendTypingIndicator() {
+    const list = document.getElementById('helpMessages');
+    const div = document.createElement('div');
+    div.className = 'help-msg assistant typing';
+    const dots = document.createElement('span');
+    dots.className = 'help-typing-dots';
+    for (let i = 0; i < 3; i++) dots.appendChild(document.createElement('span'));
+    div.appendChild(dots);
     list.appendChild(div);
     list.scrollTop = list.scrollHeight;
     return div;
@@ -285,34 +315,51 @@
     sendBtn.disabled = true;
     appendHelpMessage('user', text);
     helpHistory.push({ role: 'user', content: text });
-    const typing = appendHelpMessage('assistant', 'thinking…', true);
+    const typing = appendTypingIndicator();
+    const started = Date.now();
+    let assistantText = null;
+    let errorText = null;
     try {
       const res = await fetch('/api/concierge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: helpHistory })
       });
-      typing.remove();
       if (!res.ok) {
         let msg = 'A momentary disturbance, my apologies. Please try again.';
         try { const j = await res.json(); if (j && j.error) msg = j.error; } catch {}
-        appendHelpMessage('assistant', msg);
+        errorText = msg;
       } else {
         const data = await res.json();
-        const reply = (data.reply || '').trim() || '(silence)';
-        appendHelpMessage('assistant', reply);
-        helpHistory.push({ role: 'assistant', content: reply });
+        assistantText = (data.reply || '').trim() || '(silence)';
       }
     } catch (e) {
-      typing.remove();
-      appendHelpMessage('assistant', 'A momentary disturbance, my apologies. Please try again.');
-    } finally {
-      helpSending = false;
-      input.disabled = false;
-      sendBtn.disabled = false;
-      input.focus();
+      errorText = 'A momentary disturbance, my apologies. Please try again.';
     }
+    // Enforce a minimum perceived response time so the typing dots stay
+    // visible long enough to feel deliberate (not instant-robotic).
+    const elapsed = Date.now() - started;
+    if (elapsed < HELP_MIN_RESPONSE_MS) {
+      await new Promise(r => setTimeout(r, HELP_MIN_RESPONSE_MS - elapsed));
+    }
+    typing.remove();
+    if (assistantText !== null) {
+      appendHelpMessage('assistant', assistantText);
+      helpHistory.push({ role: 'assistant', content: assistantText });
+    } else {
+      appendHelpMessage('assistant', errorText);
+    }
+    helpSending = false;
+    input.disabled = false;
+    sendBtn.disabled = false;
+    input.focus();
   }
+  // "Happy to help!" tooltip — appears shortly after page load, lingers ~10s.
+  helpTooltipTimers.push(setTimeout(() => {
+    const t = document.getElementById('helpTooltip');
+    if (t) t.classList.add('show');
+    helpTooltipTimers.push(setTimeout(dismissHelpTooltip, 10000));
+  }, 1200));
 
   async function submitBooking() {
     const firstName = document.getElementById('firstName').value.trim();
@@ -353,7 +400,12 @@
   }
 </script>
 
-<button class="help-btn" onclick="openHelp()" title="Concierge" aria-label="Open the concierge">?</button>
+<div class="help-tooltip" id="helpTooltip" aria-hidden="true">Happy to help!</div>
+<button class="help-btn" onclick="openHelp()" title="Concierge" aria-label="Open the concierge">
+  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path fill="#0a0a0a" d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM7 9.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/>
+  </svg>
+</button>
 <div class="help-panel" id="helpPanel" role="dialog" aria-label="Book Ted concierge">
   <div class="help-header">
     <div class="help-title">Concierge</div>
