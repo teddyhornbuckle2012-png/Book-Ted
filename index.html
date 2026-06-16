@@ -409,7 +409,11 @@
       }
     });
   }
-  setupHelpDrag();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupHelpDrag);
+  } else {
+    setupHelpDrag();
+  }
   function appendHelpMessage(role, text) {
     const list = document.getElementById('helpMessages');
     const div = document.createElement('div');
