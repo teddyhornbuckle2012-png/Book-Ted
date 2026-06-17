@@ -91,6 +91,11 @@ function announcementHtml(firstName) {
           A polite and attentive guide, the Concierge is on hand at any hour to walk you through the booking process, answer questions about locations, payment, and availability, and ensure that arranging time with Sir Teddy is as effortless as the service itself.
         </div>
       </td></tr>
+      <tr><td style="padding:14px 50px 6px;">
+        <div style="font-family:Georgia,serif;font-size:16px;line-height:1.85;color:#cbbe98;">
+          Book Ted is now tailored to every screen you carry &mdash; desktop, tablet, mobile, and, for those so inclined, your <strong style="color:#C9A84C;font-weight:600;">Wear&nbsp;OS</strong> timepiece. Wherever the inspiration strikes, a booking is but a moment away.
+        </div>
+      </td></tr>
       <tr><td style="padding:14px 50px 28px;">
         <div style="font-family:Georgia,serif;font-size:16px;line-height:1.85;color:#cbbe98;">
           We invite you to pay the site a visit and try it for yourself.
