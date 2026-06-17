@@ -161,6 +161,7 @@
     </div>
     <div style="display:flex;gap:8px;">
       <button class="btn-logout" onclick="sendTest()">Test</button>
+      <button class="btn-logout" onclick="announceConcierge()">Announce</button>
       <button class="btn-logout" onclick="logout()">Log Out</button>
     </div>
   </div>
@@ -255,6 +256,53 @@
       }
     } catch (e) {
       alert('Test email failed:\n\n' + (e && e.message ? e.message : e));
+    }
+  }
+
+  async function announceConcierge() {
+    // Step 1: dry-run count.
+    let count = null;
+    try {
+      const res = await fetch('/api/announce-concierge');
+      if (!res.ok) {
+        alert('Could not check the recipient list:\n\n' + await readError(res));
+        return;
+      }
+      const data = await res.json();
+      count = data.uniqueRecipients;
+    } catch (e) {
+      alert('Could not check the recipient list:\n\n' + (e && e.message ? e.message : e));
+      return;
+    }
+    if (!count) {
+      alert('No past customers found — nothing to send.');
+      return;
+    }
+    // Step 2: double confirm.
+    const ok1 = confirm(
+      'CONCIERGE ANNOUNCEMENT\n\n' +
+      'This will email ' + count + ' unique past customer' + (count === 1 ? '' : 's') + '.\n\n' +
+      'Continue?'
+    );
+    if (!ok1) return;
+    const typed = prompt('Type SEND in capitals to confirm the dispatch:');
+    if (typed !== 'SEND') { alert('Cancelled — emails not sent.'); return; }
+
+    // Step 3: fire.
+    try {
+      const res = await fetch('/api/announce-concierge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'SEND' })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        alert('Sent: ' + data.sent + ' of ' + data.totalRecipients + '.\nFailed: ' + data.failed + '.');
+      } else {
+        alert('Announcement failed:\n\n' + await readError(res));
+      }
+    } catch (e) {
+      alert('Announcement failed:\n\n' + (e && e.message ? e.message : e));
     }
   }
 
