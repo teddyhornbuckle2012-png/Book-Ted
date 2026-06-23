@@ -346,6 +346,29 @@
   let helpSending = false;
   let helpTooltipTimers = [];
 
+  // Daily fair-use limit — keeps API costs predictable. UK-day boundary so
+  // it lines up with how a UK-based concierge service would naturally reset.
+  const HELP_DAILY_LIMIT = 4;
+  function helpDayKey() {
+    // YYYY-MM-DD in Europe/London regardless of the visitor's own zone.
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
+  }
+  function helpReadUsage() {
+    try {
+      const raw = localStorage.getItem('helpDaily');
+      if (!raw) return { day: helpDayKey(), count: 0 };
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.day === helpDayKey()) return parsed;
+    } catch {}
+    return { day: helpDayKey(), count: 0 };
+  }
+  function helpWriteUsage(u) {
+    try { localStorage.setItem('helpDaily', JSON.stringify(u)); } catch {}
+  }
+  function helpRemaining() {
+    return Math.max(0, HELP_DAILY_LIMIT - helpReadUsage().count);
+  }
+
   // Average adult typing speed is ~40 WPM (around 200 characters per minute,
   // i.e. roughly 300 ms per character) plus a brief moment to gather thoughts.
   // Clamped to 2.5s–90s so very short replies still feel deliberate and very
@@ -389,10 +412,21 @@
       const typing = appendTypingIndicator();
       setTimeout(() => {
         typing.remove();
-        appendHelpMessage('assistant', getTimeBasedGreeting());
+        if (helpRemaining() === 0) {
+          appendHelpMessage('assistant', helpLimitMessage());
+          const input = document.getElementById('helpInput');
+          const sendBtn = document.getElementById('helpSend');
+          input.disabled = true;
+          sendBtn.disabled = true;
+          input.placeholder = 'Daily limit reached — back tomorrow.';
+        } else {
+          appendHelpMessage('assistant', getTimeBasedGreeting());
+        }
       }, 2800);
     }
-    setTimeout(() => document.getElementById('helpInput').focus(), 60);
+    if (helpRemaining() > 0) {
+      setTimeout(() => document.getElementById('helpInput').focus(), 60);
+    }
   }
   function closeHelp() {
     const panel = document.getElementById('helpPanel');
@@ -525,8 +559,23 @@
     list.scrollTop = list.scrollHeight;
     return div;
   }
+  function helpLimitMessage() {
+    return 'With my deepest apologies, Sir Teddy permits each guest four questions per day, and I am afraid you have used the four allotted to you. The Concierge shall be at your service again tomorrow. In the meantime, please do not hesitate to make a booking through the form above.';
+  }
+  function helpEnforceLimit() {
+    if (helpRemaining() > 0) return false;
+    const input = document.getElementById('helpInput');
+    const sendBtn = document.getElementById('helpSend');
+    appendHelpMessage('assistant', helpLimitMessage());
+    input.value = '';
+    input.disabled = true;
+    sendBtn.disabled = true;
+    input.placeholder = 'Daily limit reached — back tomorrow.';
+    return true;
+  }
   async function sendHelp() {
     if (helpSending) return;
+    if (helpEnforceLimit()) return;
     const input = document.getElementById('helpInput');
     const sendBtn = document.getElementById('helpSend');
     const text = input.value.trim();
@@ -537,6 +586,9 @@
     sendBtn.disabled = true;
     appendHelpMessage('user', text);
     helpHistory.push({ role: 'user', content: text });
+    // Count the question against today's allowance the moment it is asked.
+    const usage = helpReadUsage();
+    helpWriteUsage({ day: usage.day, count: usage.count + 1 });
 
     // Kick off the network request immediately so it overlaps with the
     // Sent -> Read wait; we'll consume the result once typing finishes.
@@ -581,9 +633,17 @@
       appendHelpMessage('assistant', result.error);
     }
     helpSending = false;
-    input.disabled = false;
-    sendBtn.disabled = false;
-    input.focus();
+    if (helpRemaining() === 0) {
+      // That was their last allowed question — leave a closing note and lock the input.
+      appendHelpMessage('assistant', helpLimitMessage());
+      input.disabled = true;
+      sendBtn.disabled = true;
+      input.placeholder = 'Daily limit reached — back tomorrow.';
+    } else {
+      input.disabled = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
   }
   // Concierge tooltip — appears shortly after page load, lingers ~10s.
   helpTooltipTimers.push(setTimeout(() => {
